@@ -18,3 +18,13 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Added per-image errors, cancellation between images, original/edited caption provenance, atomic CSV/JSON exports, overwrite protection, and spreadsheet formula escaping.
 - Added a CLI for individual images, folders, recursive batches, model download, and exports.
 - Validation: 31 tests passed on Windows/Python 3.11.9; dependency consistency check passed. Real model download/inference verification is in progress.
+
+## 2026-11-03 — Checkpoint 3: Windows desktop workspace
+
+- Built the native desktop workspace with file/folder selection, preview, queue status, caption-length controls, progress, cancellation, and failed-image retry.
+- Added editable captions, copy/restore actions, CSV/JSON save dialogs, and protection against accidentally discarding unexported work.
+- Kept inference off the Tk event thread and preserved fatal errors across separate event polls.
+- Integrated the Windows trust store after a verified HTTPS certificate-chain failure; TLS verification remains enabled.
+- Added a double-click launcher, PowerShell setup script, pinned dependency snapshot, and Windows CI workflow.
+- Validation: all five desktop integration tests passed in the Windows user context (36 tests total with the core suite); lint, formatting, and PowerShell syntax checks passed. The sandbox could not initialize the installed Tcl runtime, so desktop tests required the normal user context.
+- Real model download is underway; caption accuracy and interactive visual acceptance are not yet established.

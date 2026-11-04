@@ -56,6 +56,10 @@ class CaptionEngine:
             else "Loading AI model (first use downloads about 1 GB)..."
         )
         try:
+            import truststore
+
+            truststore.inject_into_ssl()
+            os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
             import torch
             from transformers import BlipForConditionalGeneration, BlipProcessor
 
