@@ -28,3 +28,12 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Added a double-click launcher, PowerShell setup script, pinned dependency snapshot, and Windows CI workflow.
 - Validation: all five desktop integration tests passed in the Windows user context (36 tests total with the core suite); lint, formatting, and PowerShell syntax checks passed. The sandbox could not initialize the installed Tcl runtime, so desktop tests required the normal user context.
 - Real model download is underway; caption accuracy and interactive visual acceptance are not yet established.
+
+## 2026-11-03 — Checkpoint 4: publish the current verified source
+
+- Completed Windows usage instructions, project licensing, model/dependency attribution, validation evidence, and a bounded roadmap for future work.
+- User requested publication of all current changes to the public Pavi21P repository, excluding the YouTube originals.
+- Final local verification: 36 tests passed together in the Windows user context, Ruff lint and formatting passed, dependency consistency passed, and Git whitespace checks passed.
+- The model download and full setup execution were interrupted. Real inference, offline inference, fresh-machine setup, and manual visual acceptance remain explicitly unverified.
+- Publication includes only the independent LumaCaption project. Original tutorial scripts/dataset remain in the parent workspace; environments, model caches, and generated files remain excluded.
+- This checkpoint is committed with its real creation date; earlier implementation checkpoints are preserved.
