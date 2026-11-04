@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lumacaption"
+version = "0.1.0"
+description = "A local-first image captioning desktop app for Windows"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = ["Pillow>=11.3,<13", "torch>=2.6,<3", "transformers>=4.57.1,<5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.12,<1"]
+
+[project.scripts]
+lumacaption = "lumacaption.cli:main"
+
+[project.gui-scripts]
+lumacaption-desktop = "lumacaption.desktop:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
