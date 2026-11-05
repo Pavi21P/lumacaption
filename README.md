@@ -106,7 +106,7 @@ BLIP can omit details, invent objects, or describe people incorrectly. Review ca
 
 ## Development record
 
-[Progress](docs/PROGRESS.md) · [Design decisions](docs/DECISIONS.md) · [Next tasks](docs/ROADMAP.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
+[Progress](docs/PROGRESS.md) · [Design decisions](docs/DECISIONS.md) · [Execution plan](docs/PLAN.md) · [Current status](docs/STATUS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 Progress is recorded in meaningful commits on the actual day of work. Future daily contributions require future work; no history is backdated. To count toward a GitHub profile, commit email must be associated with that account and commits must reach its default branch.
 

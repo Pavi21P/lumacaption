@@ -50,3 +50,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Extended CI lint/format coverage to the verification script. All 36 local tests passed again after the loader fix.
 - Preserved the original tutorial files and dataset outside the repository. No trained weights, test photos, or local output reports are published.
 - Final real-model regression run passed after the loader fix: identical captions, zero network attempts, unchanged source files, desktop worker and exports verified; total 34.238 seconds.
+
+## 2026-11-04 — P00: compact development plan
+
+- Replaced the broad roadmap with 12 bounded work sessions, dependencies, and concrete completion checks.
+- Added AGENTS.md and a short STATUS.md handoff so future sessions read the next task and relevant files rather than re-exploring the full project.
+- Defined one ready task per continue request, targeted checks, cached-environment reuse, and a progress/commit/push step using the actual work date.
+- Confirmed hosted Windows CI passed for fa6a3ab. This documentation checkpoint needs no repeated model run or application tests.
+- Next: LC01, versioned saved-session storage. Daily sessions remain user-triggered; no unattended scheduler was configured.
