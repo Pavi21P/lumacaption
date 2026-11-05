@@ -66,3 +66,7 @@ Only independent LumaCaption source, tests, verification scripts, setup/launcher
 - A controlled quality benchmark against the original tutorial model.
 
 These limits are distinct from the successful real-model offline smoke test.
+
+## LC01 session-storage checks (2026-11-04)
+
+48 new storage tests passed, bringing the full suite to 84 passing tests. Ruff passed for 13 Python files. Tests exercised malformed files, schema/resource limits, edit/settings round trips, missing images, write/flush failures, destination races, and original-file protection. Desktop Save/Open controls are not part of this checkpoint. The existing offline-model evidence above remains applicable; inference code did not change.

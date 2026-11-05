@@ -58,3 +58,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Defined one ready task per continue request, targeted checks, cached-environment reuse, and a progress/commit/push step using the actual work date.
 - Confirmed hosted Windows CI passed for fa6a3ab. This documentation checkpoint needs no repeated model run or application tests.
 - Next: LC01, versioned saved-session storage. Daily sessions remain user-triggered; no unattended scheduler was configured.
+
+## 2026-11-04 — LC01: versioned saved-session storage
+
+- Added sessions.py with Session/load_session/save_session APIs, a distinct versioned JSON format, complete result/settings preservation, and validation of types, timestamps, paths, duplicates, versions, and size/count/text limits.
+- Added atomic saves with explicit overwrite permission, concurrent-writer protection, temporary-file cleanup, and input-file overwrite protection. Loading preserves missing-image records and performs no image reads or model inference.
+- Documented the contract in SESSIONS.md and ignored the default *.lumacaption.json save-file pattern.
+- Validation: 48 focused storage tests passed; all 84 project tests, Ruff lint/format, and whitespace checks passed. Existing dependencies/cache were reused; no ML run was needed.
+- Next: LC02 desktop Save/Open integration. UI and autosave work were intentionally left for their planned checkpoints.

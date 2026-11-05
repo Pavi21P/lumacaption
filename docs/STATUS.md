@@ -3,30 +3,31 @@
 Updated: 2026-11-04 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: P00 — compact execution plan saved
-Next task: LC01 — versioned saved-session storage
+Current checkpoint: LC01 — versioned saved-session storage complete
+Next task: LC02 — Save/Open session in the desktop
 Task source: docs/PLAN.md
-Session rule: complete one ready task per "continue", verify, commit/push, stop.
-Scheduling: user-triggered sessions; no unattended daily job is configured.
+Session rule: one ready task per "continue", verify, commit/push, stop.
+Scheduling: user-triggered; no unattended daily job.
 
 ## Verified baseline
 
-- Code checkpoint: fa6a3ab (2026-11-04).
-- Windows Python 3.11.9 / Tk 8.6 / CPU-only BLIP.
-- 36 tests, Ruff, setup, launcher, exports, and real offline desktop inference passed.
-- Real offline verification made zero network attempts and preserved input files.
-- Hosted CI for fa6a3ab passed: https://github.com/Pavi21P/lumacaption/actions/runs/41951743617
-- Reuse .venv and .cache/models. Local reports live in .local and are ignored.
+- 84 tests passed (48 session-storage tests plus 36 existing tests); Ruff passed.
+- LC01 changed storage only; desktop Save/Open controls are not implemented.
+- Prior real offline inference, setup, launcher, and exports passed at fa6a3ab.
+- Hosted CI for fa6a3ab passed; check current checkpoint CI on GitHub.
+- Reuse .venv and .cache/models; local reports in .local are ignored.
 
-## Next-task starting points
+## LC02 starting points
 
-- Existing result schema: src/lumacaption/batch.py
-- Existing export patterns: src/lumacaption/exporting.py
-- UI state: src/lumacaption/desktop.py
-- Proposed new storage module: src/lumacaption/sessions.py
-- Tests: tests/test_sessions.py (new)
-- LC01 must not modify the desktop UI yet.
+- Storage contract: docs/SESSIONS.md
+- API: Session, load_session, save_session in src/lumacaption/sessions.py
+- UI state and dialogs: src/lumacaption/desktop.py
+- Existing UI tests: tests/test_desktop.py
+- Import the entire file successfully before replacing the active workspace.
+- Protect unsaved edits; show missing images as errors while preserving their captions.
+- Default file name: workspace.lumacaption.json (ignored by Git).
+- Save/Open integration only; autosave belongs to LC03.
 
 ## Outstanding evidence
 
-Fresh Windows machine installation, manual accessibility acceptance, comparative quality benchmarks, and GPU execution remain unverified. These do not block LC01.
+Fresh-machine installation, manual accessibility acceptance, comparative benchmarks, and GPU execution remain unverified. These do not block LC02.
