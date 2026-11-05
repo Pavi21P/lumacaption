@@ -60,6 +60,9 @@ class CaptionEngine:
 
             truststore.inject_into_ssl()
             os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+            # Load the pinned official weights without launching the optional
+            # remote conversion worker, which can keep the process alive on exit.
+            os.environ["DISABLE_SAFETENSORS_CONVERSION"] = "true"
             import torch
             from transformers import BlipForConditionalGeneration, BlipProcessor
 

@@ -37,3 +37,16 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - The model download and full setup execution were interrupted. Real inference, offline inference, fresh-machine setup, and manual visual acceptance remain explicitly unverified.
 - Publication includes only the independent LumaCaption project. Original tutorial scripts/dataset remain in the parent workspace; environments, model caches, and generated files remain excluded.
 - This checkpoint is committed with its real creation date; earlier implementation checkpoints are preserved.
+
+## 2026-11-04 — Checkpoint 5: verified local model and Windows startup
+
+- Confirmed the initial published commit passed hosted Windows CI.
+- Recorded the completed November 3 real-model smoke test: two captions, zero network attempts, unchanged source-image hashes, matching desktop-worker output, and successful CSV/JSON round trips.
+- Added scripts/verify_offline.py so the same checks can be repeated with locally supplied photos; model weights and reports remain outside Git.
+- Verified the actual Windows launcher with an offline image path containing spaces and a JSON export.
+- Strengthened setup validation to initialize Tk, and removed redundant pip version checks during installation.
+- Identified an optional Transformers conversion worker that delayed normal online-mode process exit. Disabled that conversion inside the application process while retaining the pinned model and restricted weights-only loading.
+- Reran Setup-Windows.ps1 -Dev -DownloadModel successfully (exit 0) in the existing development environment. Fresh-machine installation and manual visual/accessibility acceptance remain unverified.
+- Extended CI lint/format coverage to the verification script. All 36 local tests passed again after the loader fix.
+- Preserved the original tutorial files and dataset outside the repository. No trained weights, test photos, or local output reports are published.
+- Final real-model regression run passed after the loader fix: identical captions, zero network attempts, unchanged source files, desktop worker and exports verified; total 34.238 seconds.

@@ -95,12 +95,12 @@ Run checks from this directory:
 
 ~~~powershell
 .\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m ruff check src tests
-.\.venv\Scripts\python.exe -m ruff format --check src tests
+.\.venv\Scripts\python.exe -m ruff check src tests scripts
+.\.venv\Scripts\python.exe -m ruff format --check src tests scripts
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-Tests use small synthetic images and a fake captioner for UI orchestration; they do not download model weights. See [validation evidence](docs/VALIDATION.md) for real model and Windows verification.
+The 36 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, saved-session restoration, or GPU acceleration.
 
