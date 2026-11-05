@@ -3,31 +3,35 @@
 Updated: 2026-11-04 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC01 — versioned saved-session storage complete
-Next task: LC02 — Save/Open session in the desktop
+Current checkpoint: LC02 - desktop Save/Open sessions complete
+Next task: LC03 - local autosave and recovery
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
 
 ## Verified baseline
 
-- 84 tests passed (48 session-storage tests plus 36 existing tests); Ruff passed.
-- LC01 changed storage only; desktop Save/Open controls are not implemented.
-- Prior real offline inference, setup, launcher, and exports passed at fa6a3ab.
-- Hosted CI for fa6a3ab passed; check current checkpoint CI on GitHub.
-- Reuse .venv and .cache/models; local reports in .local are ignored.
+- 101 tests passed, including 22 desktop tests; Ruff lint/format passed.
+- Save/Open restores queue, edits, settings, and provenance without starting inference.
+- Save/discard/cancel prompts protect unsaved work; export does not save a session.
+- Missing-image warnings preserve stored rows/captions and exclude them from generation.
+- Real cached-model smoke passed: zero network attempts, unchanged source files,
+  matching desktop-worker captions, and CSV/JSON exports; total 28.904 seconds.
+- Hosted CI status is checked after each push; see GitHub for the latest checkpoint.
+- Reuse .venv and .cache/models; .local reports remain ignored.
 
-## LC02 starting points
+## LC03 starting points
 
-- Storage contract: docs/SESSIONS.md
-- API: Session, load_session, save_session in src/lumacaption/sessions.py
-- UI state and dialogs: src/lumacaption/desktop.py
-- Existing UI tests: tests/test_desktop.py
-- Import the entire file successfully before replacing the active workspace.
-- Protect unsaved edits; show missing images as errors while preserving their captions.
-- Default file name: workspace.lumacaption.json (ignored by Git).
-- Save/Open integration only; autosave belongs to LC03.
+- Storage contract/API: docs/SESSIONS.md and src/lumacaption/sessions.py.
+- Desktop state/dialogs and dirty tracking: src/lumacaption/desktop.py.
+- Tests: tests/test_desktop.py and tests/test_sessions.py.
+- Add debounced autosave outside Git and offer recovery at startup.
+- Capture Tk state on the UI thread; do not race generation/results or manual saves.
+- Recovered jobs must remain pending until the user starts generation.
+- Preserve existing save/discard/cancel and failed-import behavior.
+- Relinking missing paths remains LC04.
 
 ## Outstanding evidence
 
-Fresh-machine installation, manual accessibility acceptance, comparative benchmarks, and GPU execution remain unverified. These do not block LC02.
+Fresh-machine installation, manual visual/accessibility acceptance, comparative benchmarks,
+and GPU execution remain unverified. These do not block LC03.

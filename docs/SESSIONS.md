@@ -1,6 +1,16 @@
 # Saved-session storage (schema 1)
 
-LC01 implements storage only. Desktop Save/Open controls are LC02.
+LC01 provides the storage API; LC02 adds desktop Save/Open controls.
+
+## Desktop behavior
+
+Use **Save session** and **Open session** above the image queue. The native save dialog confirms replacement of existing files. Open validates the entire document before offering to replace the current workspace. Malformed or unreadable files leave the workspace intact.
+
+Queue additions, generated results, caption edits, retries, and setting changes mark the workspace unsaved. Before opening another session, clearing, or closing an idle workspace, choose Yes to save, No to discard, or Cancel to keep working. A cancelled or failed save stops the requested replacement. Exporting CSV/JSON does not save the workspace.
+
+Save/Open and Clear are disabled while generation runs. Cancel the batch and wait for the current operation to finish before saving. Restored pending rows stay pending until Generate is clicked. Caption length, beam count, offline mode, and recursive-folder settings are preserved; the desktop does not expose a beam-count editor.
+
+Missing or unavailable paths receive a red Missing display state and a preview warning. Their stored result status, captions, edits, timing, and provenance stay intact. Completed captions remain editable and exportable even without the image. Missing rows are excluded from generation and retry so retained text cannot be overwritten by another missing-file failure. Restore the image at its saved path and reopen the session to refresh availability. Relinking is LC04; autosave/recovery is LC03.
 
 ## API
 
@@ -34,3 +44,5 @@ Do not create missing parent directories implicitly. Loading returns fresh objec
 ## Evidence
 
 48 focused tests cover round trips, Unicode/edits/options/status preservation, missing paths, malformed and ambiguous JSON, resource limits, concurrent destination creation, failed flush/replacement, and source-file protection. All 84 project tests and Ruff checks passed on Windows for LC01. No model download or inference rerun was needed.
+
+LC02 adds 17 desktop cases (22 desktop tests total), covering native-dialog outcomes, full workspace round trips, unsaved-work protection, invalid imports, failed saves, missing-image retention, busy controls, and explicit-only generation with restored options. All 101 project tests and Ruff passed; the real offline worker smoke also passed.

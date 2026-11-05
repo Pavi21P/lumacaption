@@ -66,3 +66,14 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Documented the contract in SESSIONS.md and ignored the default *.lumacaption.json save-file pattern.
 - Validation: 48 focused storage tests passed; all 84 project tests, Ruff lint/format, and whitespace checks passed. Existing dependencies/cache were reused; no ML run was needed.
 - Next: LC02 desktop Save/Open integration. UI and autosave work were intentionally left for their planned checkpoints.
+
+## 2026-11-04 - LC02: desktop Save/Open sessions
+
+- Added native Save/Open dialogs for complete workspaces, including pending rows, edited/original captions, generation settings, and provenance.
+- Added save/discard/cancel prompts before replacing unsaved work. Failed or cancelled saves keep the workspace; malformed imports never replace it. Saving over the session being opened restores the newly saved contents.
+- Flagged missing images as red Missing rows without changing their stored result data. Retained captions remain available; missing rows are excluded from generation/retry. Opening a session does not start inference.
+- Kept Save/Open disabled during batches and separated result export from saving a workspace. Reset editor undo history when switching/restoring captions.
+- Validation: 22 desktop tests passed; 101 tests passed overall; Ruff lint/format and Git whitespace checks passed.
+- Because restored generation options now reach the worker, reran the real cached-model offline smoke: zero network attempts, unchanged source hashes, matching desktop-worker captions, successful CSV/JSON export checks, 28.904 seconds total.
+- Published source/docs only; original tutorial files, photos, weights, environments, sessions, and local reports remain excluded. No manual visual/accessibility acceptance is claimed.
+- Next: LC03 local autosave and recovery.

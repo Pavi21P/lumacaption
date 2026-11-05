@@ -14,6 +14,7 @@ from .batch import CaptionResult, run_batch
 from .engine import LENGTHS, CaptionEngine, CaptionOptions
 from .exporting import export_results
 from .images import MAX_BATCH, ImageInputError, collect_images, load_image
+from .sessions import Session, load_session, save_session
 
 BG = "#f3f5f7"
 INK = "#152a36"
@@ -34,6 +35,9 @@ class CaptionApp:
         self.engine: CaptionEngine | None = None
         self.busy = False
         self.dirty = False
+        self.session_path: Path | None = None
+        self.image_errors: dict[str, str] = {}
+        self.beams = 3
         self.closed = False
         self.batch_finished = 0
         self.batch_total = 0
@@ -44,6 +48,8 @@ class CaptionApp:
         self.offline = tk.BooleanVar(value=offline)
         self.recursive = tk.BooleanVar(value=False)
         self._build()
+        for variable in (self.length, self.offline, self.recursive):
+            variable.trace_add("write", self._settings_changed)
         self.root.after(100, self._poll)
 
     def _build(self) -> None:
@@ -108,6 +114,20 @@ class CaptionApp:
         self.recursive_check.pack(side="left", padx=8)
         self.clear_button = ttk.Button(toolbar, text="Clear workspace", command=self._clear)
         self.clear_button.pack(side="right")
+
+        sessions = ttk.Frame(self.root, padding=(24, 0, 24, 12))
+        sessions.pack(fill="x")
+        self.open_session_button = ttk.Button(
+            sessions, text="Open session", command=self._open_session
+        )
+        self.open_session_button.pack(side="left")
+        self.save_session_button = ttk.Button(
+            sessions, text="Save session", command=self._save_session
+        )
+        self.save_session_button.pack(side="left", padx=8)
+        ttk.Label(
+            sessions, text="Save your queue, captions, and settings.", style="Muted.TLabel"
+        ).pack(side="left", padx=8)
 
         body = ttk.Frame(self.root, padding=(24, 0, 24, 10))
         body.pack(fill="both", expand=True)
@@ -244,6 +264,8 @@ class CaptionApp:
                 key = str(path)
                 self.rows[key] = CaptionResult(path=key)
                 self.tree.insert("", "end", iid=key, values=(path.name, "Ready"))
+            if new:
+                self.dirty = True
             if not self.tree.selection() and self.rows:
                 self.tree.selection_set(next(iter(self.rows)))
             self.status.set(f"Added {len(new)} image(s). Select Generate captions when ready.")
@@ -302,14 +324,15 @@ class CaptionApp:
         if row:
             self.editor.insert("1.0", row.caption)
             self.detail.configure(
-                text=row.error
-                if row.status == "error"
+                text=self.image_errors.get(row.path) or row.error
+                if row.path in self.image_errors or row.status == "error"
                 else (
                     f"Generated in {row.elapsed_seconds:.1f}s · Editable draft"
                     if row.status == "done"
                     else "Ready to generate a caption."
                 )
             )
+        self.editor.edit_reset()
         self.editor.configure(state="normal" if row and row.status == "done" else "disabled")
 
     def _save_edit(self) -> None:
@@ -320,7 +343,7 @@ class CaptionApp:
                 row.caption = text
                 row.edited = text != row.generated_caption
                 self.dirty = True
-                self.tree.set(row.path, "state", "Edited" if row.edited else "Done")
+                self._refresh_row(row)
 
     def _copy(self) -> None:
         self._save_edit()
@@ -336,17 +359,21 @@ class CaptionApp:
             row.caption = row.generated_caption
             row.edited = False
             self.dirty = True
-            self.tree.set(row.path, "state", "Done")
+            self._refresh_row(row)
             self._show_caption()
 
     def _start(self) -> None:
         if self.busy:
             return
-        paths = [Path(row.path) for row in self.rows.values() if row.status == "pending"]
+        paths = [
+            Path(row.path)
+            for row in self.rows.values()
+            if row.status == "pending" and row.path not in self.image_errors
+        ]
         if not paths:
             return
         self._save_edit()
-        options = CaptionOptions(length=self.length.get())
+        options = CaptionOptions(length=self.length.get(), beams=self.beams)
         offline = self.offline.get()
         self.busy = True
         self.cancel_event.clear()
@@ -410,7 +437,7 @@ class CaptionApp:
                         verb = "Cancelled" if self.cancel_event.is_set() else "Finished"
                         self.status.set(
                             f"{verb}: {self.batch_finished} of {self.batch_total} "
-                            f"processed · {errors} error(s). Export to save your results."
+                            f"processed · {errors} error(s). Save the session to keep your work."
                         )
                     self._update_controls()
         except queue.Empty:
@@ -426,8 +453,12 @@ class CaptionApp:
         )
 
     def _retry(self) -> None:
+        if self.busy:
+            return
+        self._save_edit()
         for row in self.rows.values():
-            if row.status == "error":
+            if row.status == "error" and row.path not in self.image_errors:
+                self.dirty = True
                 row.status = "pending"
                 row.error = ""
                 self.tree.item(row.path, values=(Path(row.path).name, "Ready"), tags=())
@@ -450,23 +481,136 @@ class CaptionApp:
         if path:
             try:
                 export_results(results, Path(path), overwrite=True)
-                self.dirty = False
-                self.status.set(f"Saved {len(results)} results to {Path(path).name}.")
+                self.status.set(f"Exported {len(results)} results to {Path(path).name}.")
             except (OSError, ValueError) as exc:
                 messagebox.showerror("Export failed", str(exc), parent=self.root)
 
-    def _clear(self) -> None:
+    def _settings_changed(self, *_args) -> None:
+        self.dirty = True
+
+    def _refresh_row(self, row: CaptionResult) -> None:
+        state = (
+            "Missing"
+            if row.path in self.image_errors
+            else "Edited"
+            if row.status == "done" and row.edited
+            else {"pending": "Ready", "done": "Done", "error": "Error"}[row.status]
+        )
+        self.tree.item(
+            row.path,
+            values=(Path(row.path).name, state),
+            tags=("error" if row.path in self.image_errors else row.status,),
+        )
+
+    def _save_session(self) -> bool:
+        if self.busy:
+            return False
+        self._save_edit()
+        path = filedialog.asksaveasfilename(
+            parent=self.root,
+            title="Save session",
+            initialfile=self.session_path.name
+            if self.session_path
+            else "workspace.lumacaption.json",
+            initialdir=str(self.session_path.parent) if self.session_path else None,
+            defaultextension=".lumacaption.json",
+            filetypes=[("LumaCaption session", "*.lumacaption.json"), ("JSON", "*.json")],
+            confirmoverwrite=True,
+        )
+        if not path:
+            return False
+        try:
+            session = Session(
+                results=list(self.rows.values()),
+                options=CaptionOptions(length=self.length.get(), beams=self.beams),
+                offline=self.offline.get(),
+                recursive=self.recursive.get(),
+            )
+            save_session(session, Path(path), overwrite=True)
+        except (OSError, ValueError) as exc:
+            messagebox.showerror("Could not save session", str(exc), parent=self.root)
+            return False
+        self.session_path = Path(path)
+        self.dirty = False
+        self.status.set(f"Session saved to {self.session_path.name}.")
+        return True
+
+    def _confirm_replace(self) -> bool:
+        self._save_edit()
+        if not self.dirty:
+            return True
+        choice = messagebox.askyesnocancel(
+            "Save workspace changes?",
+            "Save your queue, captions, and settings before continuing?\n"
+            "Yes: save a session. No: discard changes. Cancel: keep working.",
+            parent=self.root,
+        )
+        if choice is None:
+            return False
+        return self._save_session() if choice else True
+
+    def _open_session(self) -> None:
         if self.busy:
             return
-        self._save_edit()
-        if self.dirty and not messagebox.askyesno(
-            "Clear unexported captions?",
-            "Unexported results will be lost. Clear the workspace?",
+        path = filedialog.askopenfilename(
             parent=self.root,
-        ):
+            title="Open session",
+            filetypes=[("LumaCaption session", "*.lumacaption.json"), ("JSON", "*.json")],
+        )
+        if not path:
             return
+        # Validate before offering to replace anything. Read again after a save:
+        # the user may save the active workspace over the file being opened.
+        try:
+            session = load_session(Path(path))
+        except (OSError, ValueError) as exc:
+            messagebox.showerror("Could not open session", str(exc), parent=self.root)
+            return
+        self._save_edit()
+        had_changes = self.dirty
+        if not self._confirm_replace():
+            return
+        try:
+            if had_changes and not self.dirty:
+                session = load_session(Path(path))
+            missing = {}
+            for row in session.results:
+                try:
+                    available = Path(row.path).is_file()
+                except OSError:
+                    available = False
+                if not available:
+                    missing[row.path] = "Image missing or unavailable. Saved captions are kept."
+        except (OSError, ValueError) as exc:
+            messagebox.showerror("Could not open session", str(exc), parent=self.root)
+            return
+        self._reset_workspace()
+        self.rows = {row.path: row for row in session.results}
+        self.image_errors = missing
+        self.length.set(session.options.length)
+        self.beams = session.options.beams
+        self.offline.set(session.offline)
+        self.recursive.set(session.recursive)
+        for row in session.results:
+            self.tree.insert("", "end", iid=row.path)
+            self._refresh_row(row)
+        self.session_path = Path(path)
+        self.dirty = False
+        if self.rows:
+            self.tree.selection_set(next(iter(self.rows)))
+            self._select()
+        self.status.set(
+            f"Opened {self.session_path.name}: {len(self.rows)} image(s), "
+            f"{len(missing)} missing or unavailable. Generation starts only when requested."
+        )
+        self._update_controls()
+
+    def _reset_workspace(self) -> None:
+        # Clear the selection before replacing rows so queued selection events
+        # cannot apply the old editor contents to a restored caption.
         self.current = None
         self.rows.clear()
+        self.image_errors.clear()
         self.tree.delete(*self.tree.get_children())
         if self.preview_source:
             self.preview_source.close()
@@ -476,20 +620,35 @@ class CaptionApp:
         self.filename.configure(text="No image selected")
         self.detail.configure(text="Review and edit generated text before sharing.")
         self._show_caption()
+        self.editor.edit_reset()
         self.progress.configure(value=0)
+        self.session_path = None
         self.dirty = False
+
+    def _clear(self) -> None:
+        if self.busy or not self._confirm_replace():
+            return
+        self._reset_workspace()
         self.status.set("Workspace cleared. Your original images are unchanged.")
         self._update_controls()
 
     def _update_controls(self) -> None:
         done = sum(row.status == "done" for row in self.rows.values())
-        pending = any(row.status == "pending" for row in self.rows.values())
-        errors = any(row.status == "error" for row in self.rows.values())
+        pending = any(
+            row.status == "pending" and row.path not in self.image_errors
+            for row in self.rows.values()
+        )
+        errors = any(
+            row.status == "error" and row.path not in self.image_errors
+            for row in self.rows.values()
+        )
         self.summary.set(f"{len(self.rows)} images · {done} captioned")
         for widget in (
             self.add_button,
             self.folder_button,
             self.clear_button,
+            self.open_session_button,
+            self.save_session_button,
             self.offline_check,
             self.recursive_check,
         ):
@@ -500,15 +659,23 @@ class CaptionApp:
         self.cancel_button.configure(
             state="normal" if self.busy and not self.cancel_event.is_set() else "disabled"
         )
-        self.export_button.configure(state="normal" if done or errors else "disabled")
+        self.export_button.configure(
+            state="normal"
+            if any(row.status in {"done", "error"} for row in self.rows.values())
+            else "disabled"
+        )
 
     def _close(self) -> None:
         self._save_edit()
-        if (self.busy or self.dirty) and not messagebox.askyesno(
-            "Close LumaCaption?",
-            "Close the app? Running work will stop and unexported captions will be lost.",
-            parent=self.root,
-        ):
+        if self.busy:
+            if not messagebox.askyesno(
+                "Close LumaCaption?",
+                "A batch is running. Close and discard unsaved work? "
+                "Choose No to return, cancel the batch, and save first.",
+                parent=self.root,
+            ):
+                return
+        elif not self._confirm_replace():
             return
         self.cancel_event.set()
         self.closed = True

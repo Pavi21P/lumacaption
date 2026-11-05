@@ -70,3 +70,9 @@ These limits are distinct from the successful real-model offline smoke test.
 ## LC01 session-storage checks (2026-11-04)
 
 48 new storage tests passed, bringing the full suite to 84 passing tests. Ruff passed for 13 Python files. Tests exercised malformed files, schema/resource limits, edit/settings round trips, missing images, write/flush failures, destination races, and original-file protection. Desktop Save/Open controls are not part of this checkpoint. The existing offline-model evidence above remains applicable; inference code did not change.
+
+## LC02 desktop-session checks (2026-11-04)
+
+22 desktop integration tests passed, bringing the full suite to 101 passing tests. New coverage includes session/editor/settings round trips, malformed imports, cancelled dialogs, save failures, save-over-open behavior, missing-image retention/export, empty workspaces, unsaved settings, busy controls, and restored options reaching the worker only after explicit generation. Native dialog responses are mocked; widgets and file persistence are exercised with real Tk on Windows. Ruff lint/format passed for all 13 Python files.
+
+The cached real-model offline smoke was rerun because restored generation options now reach the desktop worker. It passed with identical captions, zero network attempts, unchanged source-image hashes, matching worker output, and successful CSV/JSON exports in 28.904 seconds. Local reports and photos remain excluded from Git. This is regression evidence, not a new quality benchmark or manual visual/accessibility acceptance.

@@ -11,6 +11,7 @@ LumaCaption's application code is written from scratch. Its AI is the pretrained
 - Generate short, standard, or long captions on your CPU.
 - Keep the window responsive while processing; cancel between images.
 - Edit captions, restore the original AI text, and copy to the clipboard.
+- Save and reopen a session with its queue, edited captions, and settings.
 - Export CSV for spreadsheets or JSON with original captions and model provenance.
 - Continue past damaged files, then retry errors.
 - Work offline after the model is downloaded. Images never go to a captioning API.
@@ -67,7 +68,14 @@ An existing CLI export is protected unless you pass `--force`. Exit codes: 0 suc
 1. Select **Add images** or **Open folder**.
 2. Choose a caption length and click **Generate captions**.
 3. Select a row to review its image and edit the draft caption.
-4. Use **Export results** before closing. Captions are held in memory until exported.
+4. Use **Save session** to keep your workspace, then **Open session** to resume later.
+5. Use **Export results** for a CSV spreadsheet or JSON report.
+
+Sessions default to workspace.lumacaption.json. Opening, clearing, or closing an idle workspace prompts to save unsaved changes. Cancelling a save or encountering a save error keeps the current workspace. Save/Open controls are disabled during generation; cancel the batch and wait for it to finish before saving.
+
+Sessions store image paths, not copies of your photos. Missing images appear as red **Missing** rows, with their saved captions preserved for editing, copying, and export. Restore the files to their original paths and reopen the session to use them again. Opening a session never starts generation automatically. See the [session format and behavior](docs/SESSIONS.md).
+
+Export files contain results; use a session file to restore the queue and settings. Exporting does not clear the unsaved-workspace prompt. Automatic recovery is not implemented yet.
 
 JPG, PNG, WebP, BMP, and TIFF are supported. Animated/multipage inputs use the first frame. Limits: 40 MB and 40 megapixels per image, 1,000 images per workspace. Duplicate paths are skipped.
 
@@ -100,9 +108,9 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 36 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 101 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
-BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, saved-session restoration, or GPU acceleration.
+BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, automatic recovery, or GPU acceleration.
 
 ## Development record
 
