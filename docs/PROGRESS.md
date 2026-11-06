@@ -101,3 +101,14 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Real cached-model regression passed with identical captions, zero network attempts, unchanged source hashes, matching desktop-worker output, and CSV/JSON checks in 44.653 seconds. Original images and the report remain local.
 - Updated the compact plan and usage documentation. Tutorial originals, datasets, photos, weights, environments, recovery files, and reports remain excluded from publication.
 - Next: LC05, model and startup diagnostics.
+
+## 2026-11-05 - LC05: model and startup diagnostics
+
+- Added --diagnose with supported Python/bitness, real Tk initialization, runtime dependency version/import checks, and pinned-cache file checks. It prints actionable fixed hints without local paths, tokens, raw errors, or local build identifiers.
+- Isolated Tk/dependency imports in a child process with network connections disabled and a 45-second timeout. Diagnostics never calls model loading or downloads; cache readability is explicitly distinguished from weight integrity and inference readiness.
+- Made CLI backend imports lazy so diagnostics/help work when Pillow or ML packages are unavailable. Extracted unchanged model/cache settings into dependency-free config.py and retained engine reexports.
+- Added 40 diagnostic tests covering missing/incompatible dependencies, bad metadata, unsupported Python/bitness, incomplete/unreadable caches, child failures/timeouts, private output, offline guards, and CLI dispatch without application dependencies.
+- Validation: 188 tests passed, Ruff lint/format passed for 18 files, and real diagnostics returned exit 0 with all checks passing in the Windows user context.
+- Shared-settings regression: real offline captions matched prior output; zero network attempts, unchanged source hashes, matching desktop-worker output, and CSV/JSON checks passed in 30.658 seconds.
+- Disabled GitHub Actions following the user's stop request; no active runs remained to cancel. After the user resumed development, retained the disabled state and documented local verification for future checkpoints.
+- Tutorial originals, images, weights, environments, sessions, and local reports remain excluded. Next: LC06 evaluation protocol.

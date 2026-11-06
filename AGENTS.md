@@ -16,7 +16,7 @@
 - For documentation-only changes: check links/paths, consistency, and git diff --check; do not rerun ML inference or the full test suite.
 - Run scripts/verify_offline.py only for model, generation, device, image-processing, or inference-thread changes. Use cached weights and local photos.
 - Desktop tests require the Windows user context if the sandbox cannot initialize Tcl.
-- Check hosted CI once after pushing. Report pending status honestly; investigate failures before declaring the checkpoint verified.
+- GitHub Actions is disabled at the user's request. Keep it disabled unless explicitly asked to re-enable it. Run local checks before pushing and verify the remote commit; do not wait for hosted CI.
 
 ## Commit and handoff
 

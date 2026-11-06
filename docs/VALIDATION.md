@@ -88,3 +88,13 @@ The real cached-model offline regression passed after adding the pre-generation 
 All 148 tests passed, including 61 desktop cases. The 19 new cases cover preserving every result field across pending/done/error rows; live editor, recovery, and manual-save round trips; cancellation; unavailable/damaged/unsupported files and directories; simulated read failures; duplicate Windows case/slash paths and hard links; queue order; in-place restoration; busy/selection controls; files moved during a session; and generation from the replacement only after an explicit request. Existing image-loading limits remain shared with the captioning pipeline. Native dialog responses are mocked; real Tk widgets and synthetic image files are exercised. Ruff lint/format passed for all 15 Python files.
 
 The real-model offline regression also passed after the preview/relink changes: identical captions, zero network attempts, unchanged source-image hashes, matching desktop-worker output, and CSV/JSON exports in 44.653 seconds. This remains a development-machine regression check, not an accuracy benchmark or manual visual/accessibility acceptance. Test photos and reports stay outside Git.
+
+## LC05 diagnostics checks (2026-11-05)
+
+All 188 tests passed, including 40 diagnostic cases. Coverage includes missing/out-of-range dependency versions, unreadable metadata, unsupported Python/bitness, incomplete/invalid/permission-denied caches, exact revision selection, child process failure/timeout/malformed output, network denial, private error redaction, incompatible CLI actions, and diagnostics dispatch without Pillow/ML imports. Ruff lint/format passed for all 18 Python files.
+
+The real --diagnose command returned exit 0 in the Windows user context: Python 3.11.9/64-bit, actual Tk initialization, Pillow 12.3.0, torch 2.15.0, transformers 4.57.6, truststore 0.10.5, and expected pinned-cache files passed. This command imports runtime components and reads cache files but never loads weights or performs inference. Cache checks establish presence/readability and JSON structure, not binary completeness or integrity. Dependency checks cover declared application runtime requirements and imports, not a full audit of every installed package.
+
+Because shared model/cache settings moved into config.py, the separate real-model regression was rerun: identical captions, zero network attempts, unchanged source-image hashes, matching desktop-worker output, and CSV/JSON exports in 30.658 seconds. Source photos and reports remain local. Frozen executable behavior, fresh-machine setup, and manual visual/accessibility acceptance remain unverified.
+
+GitHub Actions is disabled at the user's request. LC05 is verified locally; no hosted run is expected for this checkpoint.

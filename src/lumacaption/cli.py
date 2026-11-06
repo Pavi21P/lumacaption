@@ -6,10 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from .batch import run_batch
-from .engine import LENGTHS, CaptionEngine, CaptionOptions, ModelUnavailableError
-from .exporting import export_results
-from .images import ImageInputError, collect_images
+from .config import LENGTHS
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -24,7 +21,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, help="Export to .csv or .json")
     parser.add_argument("--force", action="store_true", help="Replace an existing export")
     parser.add_argument("--download-model", action="store_true", help="Cache the model and exit")
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--diagnose",
+        action="store_true",
+        help="Check local Python, Tk, dependencies, and cached files without downloads",
+    )
+    raw_args = sys.argv[1:] if argv is None else argv
+    args = parser.parse_args(raw_args)
+    if args.diagnose:
+        if len(raw_args) != 1:
+            parser.error("--diagnose must be used by itself")
+        from .diagnostics import run_diagnostics
+
+        return run_diagnostics()
+
+    from .batch import run_batch
+    from .engine import CaptionEngine, CaptionOptions, ModelUnavailableError
+    from .exporting import export_results
+    from .images import ImageInputError, collect_images
+
     status = lambda message: print(message, file=sys.stderr, flush=True)  # noqa: E731
     engine = CaptionEngine(offline=args.offline)
     try:

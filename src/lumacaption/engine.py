@@ -9,9 +9,10 @@ from pathlib import Path
 
 from PIL import Image
 
-MODEL_ID = "Salesforce/blip-image-captioning-base"
-MODEL_REVISION = "82a37760796d32b1411fe092ab5d4e227313294b"
-LENGTHS = {"Short": 20, "Standard": 35, "Long": 60}
+from .config import LENGTHS as LENGTHS
+from .config import MODEL_ID as MODEL_ID
+from .config import MODEL_REVISION as MODEL_REVISION
+from .config import default_cache as default_cache
 
 
 class ModelUnavailableError(RuntimeError):
@@ -28,14 +29,6 @@ class CaptionOptions:
             raise ValueError(f"Length must be one of: {', '.join(LENGTHS)}")
         if not 1 <= self.beams <= 5:
             raise ValueError("Beam count must be between 1 and 5.")
-
-
-def default_cache() -> Path:
-    override = os.environ.get("LUMACAPTION_CACHE")
-    if override:
-        return Path(override).expanduser().resolve()
-    base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".cache"))
-    return base / "LumaCaption" / "models"
 
 
 class CaptionEngine:

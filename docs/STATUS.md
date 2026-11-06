@@ -3,36 +3,35 @@
 Updated: 2026-11-05 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC04 - relink moved or missing images complete
-Next task: LC05 - model and startup diagnostics
+Current checkpoint: LC05 - model and startup diagnostics complete
+Next task: LC06 - reproducible evaluation protocol
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
+GitHub Actions: disabled at user request; local checks required; do not re-enable unasked.
 
 ## Verified baseline
 
-- 148 tests passed (61 desktop, 8 recovery-store, 79 existing other tests).
-- Ruff lint/format passed for 15 Python files.
-- Relink validates images before changing paths and preserves caption/provenance/status.
-- Cancel, invalid input, duplicates/aliases, busy state, and recovery/save integration tested.
-- Selecting moved/restored images refreshes missing status; relink never starts generation.
-- Real cached-model smoke passed: zero network attempts, unchanged source files,
-  matching desktop-worker captions, and CSV/JSON exports; total 44.653 seconds.
-- Hosted CI is checked once after push; see GitHub for current status.
+- 188 tests passed (61 desktop, 8 recovery, 40 diagnostics, 79 existing other tests).
+- Ruff lint/format passed for 18 Python files.
+- --diagnose checks Python/Tk/runtime imports/versions/pinned cache with redacted output.
+- Real diagnostics passed here without loading weights; file presence is not inference proof.
+- Shared model/cache settings moved to dependency-free config.py; engine reexports preserved.
+- Real offline regression passed: zero network attempts, unchanged photos,
+  matching desktop-worker captions and CSV/JSON exports; total 30.658 seconds.
 - Reuse .venv and .cache/models; .local reports remain ignored.
 
-## LC05 starting points
+## LC06 starting points
 
-- CLI entry/options: src/lumacaption/cli.py; existing CLI tests: tests/test_core.py.
-- Model/cache readiness: src/lumacaption/engine.py and Setup-Windows.ps1.
-- Add a concise diagnostic command for Python/Tk/dependencies/cache readiness.
-- Diagnostics must not download weights or expose private paths/tokens.
-- Report actionable failures and distinguish cached files from proven model readiness.
-- Keep the working CPU setup and all existing caption/session/recovery behavior.
-- Use synthetic or mocked missing-dependency/cache cases; reuse the installed environment.
-- Desktop tests share one Tcl runtime with a fresh window per test.
+- Define a small held-out evaluation split, selection method, metrics, and review rubric.
+- Verify dataset terms and document provenance before selecting evaluation inputs.
+- Keep source photos, references, and generated reports outside Git.
+- Avoid claims about comparative quality until LC07 runs the documented protocol.
+- Consult docs/VALIDATION.md for existing smoke-test limits; these are not benchmark data.
+- Protocol/documentation only; evaluation tooling and measured baseline belong to LC07.
+- Preserve the original tutorial data outside the LumaCaption repository.
 
 ## Outstanding evidence
 
-Fresh-machine installation, manual visual/accessibility acceptance, comparative benchmarks,
-and GPU execution remain unverified. These do not block LC05.
+Clean-machine installation, packaged runtime, manual visual/accessibility acceptance,
+comparative benchmarks, and GPU execution remain unverified.

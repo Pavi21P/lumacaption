@@ -65,6 +65,20 @@ $env:LUMACAPTION_CACHE = Join-Path $PWD ".cache\models"
 
 An existing CLI export is protected unless you pass `--force`. Exit codes: 0 success, 1 one or more image failures, 2 input/setup failure, 130 interrupted.
 
+## Local diagnostics
+
+Run this from the project folder:
+
+~~~powershell
+.\Launch-LumaCaption.cmd --diagnose
+~~~
+
+This checks supported Python/bitness, actual Tk window initialization, installed runtime dependency versions/imports, and readable files for the pinned BLIP revision. It does not download files, load model weights, or start captioning. The isolated import probe blocks network connections and has a 45-second timeout. Output omits local paths, tokens, build identifiers, and raw errors.
+
+Exit code 0 means every reported check passed; 1 means at least one check needs attention; 2 means invalid command usage. Use --diagnose by itself. A readable cache is not proof of weight integrity or successful inference. Follow the printed setup/download hints, then test an image to verify captioning.
+
+For scripted use without the launcher's pause on failures, run .venv/Scripts/python.exe -m lumacaption --diagnose with LUMACAPTION_CACHE set to .cache/models. Direct invocation otherwise uses the regular app-data cache, as described above.
+
 ## Working with captions
 
 1. Select **Add images** or **Open folder**.
@@ -97,7 +111,7 @@ CSV uses UTF-8 with a BOM for Excel and escapes formula-like cells. JSON preserv
 | One image from a terminal | Previewable batch queue and editable captions |
 | Generated pickle/tokenizer files | Versioned pretrained processor and model |
 | Minimal error reporting | File validation, per-image recovery, export protection |
-| Unrecorded manual changes | Tests, Windows CI, and checkpoint progress log |
+| Unrecorded manual changes | Local tests, checkpoint commits, and progress log |
 
 These are workflow and reliability improvements. **No controlled caption-quality comparison with the tutorial model has been performed.**
 
@@ -112,11 +126,13 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 148 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 188 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, or GPU acceleration.
 
 ## Development record
+
+GitHub Actions is currently disabled at the user's request. Development checkpoints run the local tests and lint checks before publication.
 
 [Progress](docs/PROGRESS.md) · [Design decisions](docs/DECISIONS.md) · [Execution plan](docs/PLAN.md) · [Current status](docs/STATUS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
