@@ -109,6 +109,15 @@ Cancellation finishes the current model operation before stopping. A model downl
 
 CSV uses UTF-8 with a BOM for Excel and escapes formula-like cells. JSON preserves paths, original AI captions, edits, errors, generation time, and model revision. Your original image files are never changed.
 
+## Keyboard controls
+
+Use Ctrl+I to add images, Ctrl+Enter to generate, Ctrl+E to export, and Ctrl+S /
+Ctrl+O to save or open sessions. F6 switches between the queue and caption editor.
+Tab and Shift+Tab leave the editor without inserting tabs. Esc cancels a running
+batch; F1 opens the full shortcut list. See [keyboard behavior and verification
+limits](docs/KEYBOARD.md). LC10 changes are in the source app; the existing local
+LC08 executable needs rebuilding to include them.
+
 ## Improvements over the starting tutorial
 
 | Starting workflow | LumaCaption |
@@ -134,7 +143,7 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 270 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 280 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 The [evaluation protocol and CLI instructions](docs/EVALUATION.md) define a fixed 50-image local test subset, lexical metrics, and a separate human-review rubric. The first offline run completed all 50 images with zero network attempts: BLEU-1 57.60, BLEU-4 21.46, and ROUGE-L 47.21 on the defined 0-100 scales. These are reference-overlap scores, not accuracy percentages or proof of improvement over the tutorial. Human review is pending; see the [configuration, timings, and limitations](docs/VALIDATION.md#lc07-evaluation-runner-and-baseline-2026-11-05).
 

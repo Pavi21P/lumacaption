@@ -936,3 +936,244 @@ def test_relinked_pending_row_generates_from_replacement_only_when_requested(
     assert seen == [(0, 0, 255)]
     assert app.rows[str(path.resolve())].caption == "A blue replacement"
     assert app.rows[str(path.resolve())].status == "done"
+
+
+def keyboard_window(root, app):
+    """Map a real Tk window so generated keys use the actual binding/focus chain."""
+    root.deiconify()
+    root.update()
+    app.add_button.focus_force()
+    root.update()
+
+
+def press(root, sequence):
+    target = root.focus_get()
+    assert target is not None
+    target.event_generate(sequence)
+    root.update()
+
+
+def test_keyboard_add_generate_edit_export_save_and_open(desktop, tmp_path, monkeypatch):
+    import json
+
+    root, app, path = desktop
+
+    class Stub:
+        offline = False
+
+        def prepare(self, status):
+            pass
+
+        def caption(self, image, options):
+            return "A blue rectangle"
+
+    app.engine = Stub()
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.askopenfilenames", lambda **kw: (str(path),)
+    )
+    keyboard_window(root, app)
+    press(root, "<Control-i>")
+    assert root.focus_get() == app.tree
+    assert app.tree.focus() == str(path.resolve())
+    press(root, "<Control-Return>")
+    pump_until(root, lambda: not app.busy)
+    assert root.focus_get() == app.tree
+    press(root, "<Return>")
+    assert root.focus_get() == app.editor
+    app.editor.tag_add("sel", "1.0", "end-1c")
+    # Replace through Tk's real text key binding, rather than calling _save_edit.
+    press(root, "<Key-x>")
+    assert app.rows[str(path.resolve())].caption == "x"
+
+    destination = tmp_path / "keyboard.json"
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(destination)
+    )
+    press(root, "<Control-e>")
+    assert json.loads(destination.read_text())["results"][0]["caption"] == "x"
+    assert app.editor.get("1.0", "end-1c") == "x"
+    session = tmp_path / "keyboard.lumacaption.json"
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(session)
+    )
+    press(root, "<Control-s>")
+    assert load_session(session).results[0].caption == "x" and not app.dirty
+    monkeypatch.setattr("lumacaption.desktop.filedialog.askopenfilename", lambda **kw: str(session))
+    press(root, "<Control-o>")
+    assert root.focus_get() == app.tree
+    assert app.rows[str(path.resolve())].caption == "x"
+    press(root, "<F6>")
+    assert root.focus_get() == app.editor
+    press(root, "<Shift-F6>")
+    assert root.focus_get() == app.tree
+
+
+def test_editor_tab_traversal_never_inserts_tabs(desktop):
+    root, app, path = desktop
+    app._apply_session(Session(results=[CaptionResult(str(path), caption="Draft", status="done")]))
+    keyboard_window(root, app)
+    press(root, "<F6>")
+    assert root.focus_get() == app.editor
+    press(root, "<Tab>")
+    assert root.focus_get() == app.copy_button
+    press(root, "<Shift-Tab>")
+    assert root.focus_get() == app.editor
+    press(root, "<Shift-Tab>")
+    assert root.focus_get() == app.offline_check
+    assert app.editor.get("1.0", "end-1c") == "Draft"
+    assert not app.dirty
+
+
+def test_keyboard_queue_arrows_select_matching_caption(desktop, tmp_path):
+    root, app, path = desktop
+    second = tmp_path / "second.png"
+    Image.new("RGB", (20, 20), "green").save(second)
+    app._apply_session(
+        Session(
+            results=[
+                CaptionResult(str(path), caption="Blue", status="done"),
+                CaptionResult(str(second), caption="Green", status="done"),
+            ]
+        )
+    )
+    keyboard_window(root, app)
+    app._focus_queue()
+    press(root, "<Down>")
+    assert app.current == str(second)
+    assert app.editor.get("1.0", "end-1c") == "Green"
+    press(root, "<Return>")
+    assert root.focus_get() == app.editor
+
+
+def test_busy_shortcuts_respect_disabled_controls_and_escape(desktop, monkeypatch):
+    root, app, path = desktop
+    app.add_paths([path])
+    monkeypatch.setattr("lumacaption.desktop.threading.Thread.start", lambda self: None)
+    keyboard_window(root, app)
+    app.generate_button.focus_set()
+    press(root, "<Control-Return>")
+    assert app.busy and root.focus_get() == app.cancel_button
+    for name in ("askopenfilenames", "askopenfilename", "asksaveasfilename", "askdirectory"):
+        monkeypatch.setattr(
+            "lumacaption.desktop.filedialog." + name,
+            lambda **kw: pytest.fail("A disabled shortcut opened a dialog"),
+        )
+    for sequence in ("<Control-i>", "<Control-Shift-I>", "<Control-o>", "<Control-s>"):
+        press(root, sequence)
+    press(root, "<Escape>")
+    assert app.cancel_event.is_set()
+    assert root.focus_get() == app.tree
+    app.events.put(("finished", None))
+    app._poll()
+    status = app.status.get()
+    press(root, "<Escape>")
+    assert app.status.get() == status and not app.busy
+
+
+def test_open_shortcut_keeps_edits_when_replacement_cancelled(desktop, tmp_path, monkeypatch):
+    root, app, path = desktop
+    app._apply_session(Session(results=[CaptionResult(str(path), caption="Draft", status="done")]))
+    other = tmp_path / "empty.lumacaption.json"
+    save_session(Session(), other)
+    monkeypatch.setattr("lumacaption.desktop.filedialog.askopenfilename", lambda **kw: str(other))
+    monkeypatch.setattr("lumacaption.desktop.messagebox.askyesnocancel", lambda *a, **kw: None)
+    keyboard_window(root, app)
+    press(root, "<F6>")
+    app.editor.insert("end", " changed")
+    root.update()
+    press(root, "<Control-o>")
+    assert root.focus_get() == app.editor
+    assert app.editor.get("1.0", "end-1c") == "Draft changed"
+    assert app.dirty and str(path) in app.rows
+
+
+def test_folder_and_help_shortcuts_and_modal_isolation(desktop, monkeypatch):
+    root, app, path = desktop
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.askdirectory", lambda **kw: str(path.parent)
+    )
+    help_calls = []
+    monkeypatch.setattr(
+        "lumacaption.desktop.messagebox.showinfo", lambda *a, **kw: help_calls.append(a)
+    )
+    keyboard_window(root, app)
+    press(root, "<Control-Shift-I>")
+    assert str(path.resolve()) in app.rows
+    press(root, "<F1>")
+    assert len(help_calls) == 1 and "Ctrl+Enter" in help_calls[0][1]
+    modal = tk.Toplevel(root)
+    modal.update()
+    modal.grab_set()
+    try:
+        # Even a queued key for the workspace cannot act during a dialog grab.
+        app.tree.event_generate("<F1>")
+        root.update()
+        assert len(help_calls) == 1
+    finally:
+        modal.grab_release()
+        modal.destroy()
+
+
+def test_tab_order_reaches_all_enabled_controls_and_skips_disabled_editor(desktop):
+    root, app, _ = desktop
+    keyboard_window(root, app)
+    seen = []
+    for _ in range(len(app.keyboard_controls) + 1):
+        current = root.focus_get()
+        if current in seen:
+            break
+        seen.append(current)
+        press(root, "<Tab>")
+    assert root.focus_get() == app.add_button
+    assert app.editor not in seen
+    assert app.generate_button not in seen
+    assert app.help_button in seen and app.tree in seen and app.length_box in seen
+    enabled = [
+        widget
+        for widget in app.keyboard_controls
+        if widget != app.editor and not widget.instate(["disabled"])
+    ]
+    assert seen == enabled
+
+
+def test_controls_remain_visible_at_minimum_window_size(desktop):
+    root, app, _ = desktop
+    keyboard_window(root, app)
+    root.geometry("960x680")
+    root.update()
+    for widget in app.keyboard_controls:
+        assert widget.winfo_viewable(), widget
+        assert widget.winfo_width() > 1 and widget.winfo_height() > 1, widget
+        assert widget.winfo_rooty() >= root.winfo_rooty(), widget
+        assert (
+            widget.winfo_rooty() + widget.winfo_height() <= root.winfo_rooty() + root.winfo_height()
+        ), widget
+
+
+def test_cancelled_add_shortcut_and_undo_preserve_editor_text(desktop, monkeypatch):
+    root, app, path = desktop
+    app._apply_session(Session(results=[CaptionResult(str(path), caption="Draft", status="done")]))
+    monkeypatch.setattr("lumacaption.desktop.filedialog.askopenfilenames", lambda **kw: ())
+    keyboard_window(root, app)
+    press(root, "<F6>")
+    press(root, "<Control-i>")
+    assert app.editor.get("1.0", "end-1c") == "Draft"
+    assert not app.dirty
+    app.editor.mark_set("insert", "end-1c")
+    press(root, "<Key-x>")
+    assert app.editor.get("1.0", "end-1c") == "Draftx"
+    press(root, "<Control-z>")
+    assert app.editor.get("1.0", "end-1c") == "Draft"
+
+
+def test_batch_completion_does_not_steal_focus_from_editor(desktop):
+    root, app, path = desktop
+    app._apply_session(Session(results=[CaptionResult(str(path), caption="Draft", status="done")]))
+    keyboard_window(root, app)
+    press(root, "<F6>")
+    app.busy = True
+    app._update_controls()
+    app.events.put(("finished", None))
+    app._poll()
+    root.update()
+    assert root.focus_get() == app.editor

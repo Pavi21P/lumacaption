@@ -145,3 +145,13 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Console and windowed executables each captioned two local photos offline, matched prior source captions, preserved inputs, and passed real Tk worker plus CSV/JSON export checks. Zero network attempts; smoke times 40.405 and 30.444 seconds respectively.
 - Help and frozen diagnostics passed. Tracked files and reachable history exclude tutorial originals, datasets, photos, weights, caches, and generated output. GitHub Actions remains disabled.
 - No installer, signature, binary release, clean-machine claim, or manual visual/accessibility acceptance. Next: LC09 clean Windows distribution verification.
+
+## 2026-11-06 - LC10: keyboard navigation and focus; LC09 blocked
+
+- Checked the LC09 prerequisite: Windows 10 Home build 19045, no WindowsSandbox.exe, Hyper-V command/service, VMware vmrun, or VirtualBox VBoxManage found, and no separate clean test host supplied. Recorded LC09 as blocked; did not install VM tooling or claim clean-machine success.
+- Completed the next independent task, LC10. Added keyboard shortcuts and F1 help, editor Tab/Shift+Tab traversal, queue/editor switching, queue selection focus, disabled-control focus recovery, and a descriptive editor label/focus border.
+- Shortcuts invoke the existing enabled controls and respect modal grabs. Existing Save/Open/discard/recovery rules remain intact; normal text editing and undo retain Tk bindings.
+- Real key tests exposed an unsupported non-Windows key symbol, removed before verification, and a pre-existing layout issue hiding lower controls on this 1366x768 display. Reserved footer space and let the queue shrink so controls remain visible, including at the minimum 960x680 client size.
+- Ten new real-Tk keyboard/layout cases pass; full regression: 280 passed in 25.10 seconds. Ruff lint/format passed for 25 Python files. Tests use a fake captioner and stubbed native-dialog responses; no model download or inference rerun was needed.
+- Documented shortcuts and an LC11 manual walkthrough. The existing LC08 executable remains an older snapshot; source launcher includes these changes, and a new named build is required for updated binaries.
+- Tutorial files, datasets, photos, weights, environments, and generated output remain excluded. GitHub Actions stays disabled. Next: LC11 manual accessibility acceptance; LC09 awaits a clean environment.

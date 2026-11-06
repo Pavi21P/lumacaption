@@ -185,3 +185,45 @@ does not establish independence from the source environment: clean Windows/VM
 installation, initial model download, and offline restart remain LC09. Bit-for-bit
 rebuild reproducibility, manual acceptance, and human caption review are unverified.
 GitHub Actions remains disabled.
+
+## LC09 environment availability and LC10 keyboard controls (2026-11-06)
+
+LC09 was not executed. Read-only host discovery reported Windows 10 Home
+(EditionID Core), build 19045. WindowsSandbox.exe was absent from System32 and
+command lookup; Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage were
+not available through command/service discovery. No separate clean Windows host
+was provided. This establishes the current test-environment blocker, not a claim
+that no virtualization software could exist elsewhere. No optional features or VM
+software were installed. LC09 remains blocked.
+
+LC10 proceeded as the next ready independent task. Ten additional integration
+tests exercise mapped Windows Tk widgets with generated keyboard events:
+
+- Add images, generate with a synthetic captioner, edit through a text key binding,
+  export JSON, save and reopen a session, and switch queue/editor panes.
+- Tab and Shift+Tab leave the editor without adding whitespace; the full enabled
+  control order wraps correctly and skips unavailable actions.
+- Arrow keys change the selected row and corresponding caption; Enter focuses editing.
+- Busy-state shortcuts cannot open forbidden dialogs; Esc cancels a batch and is
+  inert when idle. Cancel/completion leave focus on an enabled control.
+- Cancelled session replacement preserves edits; cancelled Ctrl+I adds no tab;
+  normal Ctrl+Z undo still works.
+- Folder/help shortcuts operate, while a modal grab blocks workspace actions.
+- Completion does not steal focus from an editor, and every interactive control is
+  mapped with nonzero dimensions inside the minimum 960x680 client height.
+
+The first run found an unsupported ISO_Left_Tab symbol on Windows; only the
+supported Shift+Tab binding is retained. The next traversal check exposed clipped
+lower controls at this host's 1366x768 resolution. The layout now reserves footer
+space and allows the queue to shrink before action controls disappear. These fixes
+were followed by a successful full suite: **280 passed in 25.10 seconds**.
+Ruff lint and format passed for all 25 Python files. No dependency/model/generation
+changes were made, so no real-model inference was rerun.
+
+Native file dialogs return stubbed paths in tests, and model output is synthetic.
+Real native-dialog keyboard navigation, human focus/visual acceptance, screen-reader
+announcements, high-contrast/high-DPI behavior, and assistive-technology compatibility
+remain unverified. See the [LC11 walkthrough](KEYBOARD.md). The LC08 executable
+was not rebuilt for this source-only checkpoint; its successful frozen smoke remains
+evidence for the LC08 snapshot only. Use the source launcher or make a new named
+build to include LC10. GitHub Actions remains disabled.

@@ -15,10 +15,16 @@ One row is one bounded work session, usually one day's work when the user return
 | LC06 | Done | Reproducible evaluation protocol | Document a small held-out evaluation split, dataset terms, selection method, metrics, and human-review rubric. Keep all source images/reference captions outside Git. No quality claims yet. | P00 |
 | LC07 | Done | Evaluation runner and measured baseline | A CLI evaluates the documented local split, preserves per-image failures, emits a reproducible report, and distinguishes model output from human ratings. Synthetic tests pass; a real run is recorded if data is available. | LC06 |
 | LC08 | Done | Reproducible Windows executable build | Add a build script/spec and dependency notices; executable launches and captions on the development machine; weights remain a separate download; build artifacts are ignored. | LC03, LC05 |
-| LC09 | Next | Clean Windows distribution verification | Test the executable and model setup on a clean Windows machine/VM, including a path with spaces and offline restart. Record exact environment and results. If unavailable, mark blocked rather than passed. | LC08 + clean Windows environment |
-| LC10 | Planned | Keyboard navigation and focus | Add useful shortcuts, predictable focus, and accessible control labels; test keyboard-only add/generate/edit/export/session flows. | LC02 |
-| LC11 | Planned | Manual accessibility acceptance | Use Windows assistive technology with a user/tester to review announcements, focus, progress, and errors; record evidence and fix observed issues. If unavailable, mark blocked. | LC10 + manual testing |
+| LC09 | Blocked | Clean Windows distribution verification | Test the executable and model setup on a clean Windows machine/VM, including a path with spaces and offline restart. Record exact environment and results. If unavailable, mark blocked rather than passed. | LC08 + clean Windows environment |
+| LC10 | Done | Keyboard navigation and focus | Add useful shortcuts, predictable focus, and accessible control labels; test keyboard-only add/generate/edit/export/session flows. | LC02 |
+| LC11 | Next | Manual accessibility acceptance | Use Windows assistive technology with a user/tester to review announcements, focus, progress, and errors; record evidence and fix observed issues. If unavailable, mark blocked. | LC10 + manual testing |
 | LC12 | Planned | Optional GPU inference | Add explicit device selection with CPU fallback and tests; measure real speed/memory only on available supported hardware. Do not replace the working CPU setup merely to attempt a benchmark. | LC05 + hardware decision |
+
+LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
+WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage
+were not found through command/service discovery. No separate clean Windows host
+was supplied. Clean-machine testing remains unperformed; no OS features or VM
+software were installed. LC10 proceeded as the next independent ready task.
 
 ## Session routine
 

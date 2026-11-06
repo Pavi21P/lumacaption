@@ -66,6 +66,7 @@ class CaptionApp:
         if autosave:
             self._initialize_recovery(recovery_dir or default_recovery_directory())
         self.root.after(100, self._poll)
+        self.root.after_idle(self._initial_focus)
 
     def _build(self) -> None:
         self.root.title("LumaCaption")
@@ -154,13 +155,17 @@ class CaptionApp:
         body.rowconfigure(0, weight=1)
         left = ttk.Frame(body)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 18))
-        ttk.Label(left, text="IMAGE QUEUE", font=("Segoe UI Semibold", 10)).pack(anchor="w")
-        ttk.Label(left, textvariable=self.summary, style="Muted.TLabel").pack(
-            anchor="w", pady=(4, 10)
+        left.columnconfigure(0, weight=1)
+        left.rowconfigure(2, weight=1)
+        ttk.Label(left, text="IMAGE QUEUE", font=("Segoe UI Semibold", 10)).grid(
+            row=0, column=0, sticky="w"
+        )
+        ttk.Label(left, textvariable=self.summary, style="Muted.TLabel").grid(
+            row=1, column=0, sticky="w", pady=(4, 10)
         )
 
         tree_frame = ttk.Frame(left)
-        tree_frame.pack(fill="both", expand=True)
+        tree_frame.grid(row=2, column=0, sticky="nsew")
         self.tree = ttk.Treeview(
             tree_frame, columns=("image", "state"), show="headings", selectmode="browse", height=11
         )
@@ -177,7 +182,7 @@ class CaptionApp:
         self.tree.tag_configure("done", foreground="#087468")
 
         options = ttk.Frame(left, padding=(0, 14, 0, 0))
-        options.pack(fill="x")
+        options.grid(row=3, column=0, sticky="ew")
         ttk.Label(options, text="Caption length").pack(side="left")
         self.length_box = ttk.Combobox(
             options, textvariable=self.length, values=list(LENGTHS), state="readonly", width=12
@@ -186,19 +191,19 @@ class CaptionApp:
         self.offline_check = ttk.Checkbutton(
             left, text="Offline — use downloaded model only", variable=self.offline
         )
-        self.offline_check.pack(anchor="w", pady=(12, 6))
+        self.offline_check.grid(row=4, column=0, sticky="w", pady=(12, 6))
         ttk.Label(
             left,
             text="First use downloads about 1 GB. No API key needed.",
             style="Muted.TLabel",
             wraplength=340,
-        ).pack(anchor="w", pady=(0, 10))
+        ).grid(row=5, column=0, sticky="w", pady=(0, 10))
         self.generate_button = ttk.Button(
             left, text="Generate captions", style="Primary.TButton", command=self._start
         )
-        self.generate_button.pack(fill="x")
+        self.generate_button.grid(row=6, column=0, sticky="ew")
         actions = ttk.Frame(left)
-        actions.pack(fill="x", pady=(8, 0))
+        actions.grid(row=7, column=0, sticky="ew", pady=(8, 0))
         self.retry_button = ttk.Button(actions, text="Retry errors", command=self._retry)
         self.retry_button.pack(side="left")
         self.cancel_button = ttk.Button(
@@ -235,6 +240,7 @@ class CaptionApp:
             wraplength=460,
         )
         self.detail.pack(anchor="w", pady=(0, 8))
+        ttk.Label(right, text="Caption text (editable)", style="Card.TLabel").pack(anchor="w")
         self.editor = tk.Text(
             right,
             height=4,
@@ -242,6 +248,9 @@ class CaptionApp:
             bg="#f6f8f9",
             fg=INK,
             insertbackground=ACCENT,
+            highlightthickness=2,
+            highlightcolor=ACCENT,
+            highlightbackground="#dfe7ea",
             relief="flat",
             padx=12,
             pady=10,
@@ -255,26 +264,141 @@ class CaptionApp:
         self.editor.bind("<<Modified>>", self._editor_modified)
         caption_actions = ttk.Frame(right, style="Card.TFrame")
         caption_actions.pack(fill="x", pady=(10, 0))
-        ttk.Button(caption_actions, text="Copy caption", command=self._copy).pack(side="left")
-        ttk.Button(caption_actions, text="Restore AI text", command=self._restore).pack(
-            side="left", padx=8
+        self.copy_button = ttk.Button(caption_actions, text="Copy caption", command=self._copy)
+        self.copy_button.pack(side="left")
+        self.restore_button = ttk.Button(
+            caption_actions, text="Restore AI text", command=self._restore
         )
+        self.restore_button.pack(side="left", padx=8)
         self.export_button = ttk.Button(
             caption_actions, text="Export results", command=self._export
         )
         self.export_button.pack(side="right")
 
         footer = ttk.Frame(self.root, padding=(24, 0, 24, 14))
-        footer.pack(fill="x")
+        footer.pack(fill="x", side="bottom", before=body)
         self.progress = ttk.Progressbar(footer, mode="determinate")
         self.progress.pack(fill="x", pady=(0, 7))
+        self.help_button = ttk.Button(
+            footer, text="Keyboard shortcuts (F1)", command=self._keyboard_help
+        )
+        self.help_button.pack(side="right", padx=(12, 0))
         ttk.Label(footer, textvariable=self.status, style="Muted.TLabel", wraplength=1060).pack(
             anchor="w"
         )
         ttk.Label(
             footer, textvariable=self.autosave_status, style="Muted.TLabel", wraplength=1060
         ).pack(anchor="w", pady=(3, 0))
+        self._bind_keyboard()
         self._update_controls()
+
+    def _bind_keyboard(self) -> None:
+        self.keyboard_controls = (
+            self.add_button,
+            self.folder_button,
+            self.recursive_check,
+            self.clear_button,
+            self.open_session_button,
+            self.save_session_button,
+            self.relink_button,
+            self.tree,
+            self.length_box,
+            self.offline_check,
+            self.generate_button,
+            self.retry_button,
+            self.cancel_button,
+            self.editor,
+            self.copy_button,
+            self.restore_button,
+            self.export_button,
+            self.help_button,
+        )
+        shortcuts = {
+            "<Control-i>": self.add_button,
+            "<Control-Shift-I>": self.folder_button,
+            "<Control-o>": self.open_session_button,
+            "<Control-s>": self.save_session_button,
+            "<Control-e>": self.export_button,
+            "<Control-Return>": self.generate_button,
+            "<Escape>": self.cancel_button,
+            "<F1>": self.help_button,
+        }
+        # Widget bindings run before Tk's Text class bindings (Ctrl+I/O/E).
+        # Use local bindings, never bind_all: dialogs retain their own keys.
+        for widget in (self.root, *self.keyboard_controls):
+            for key, button in shortcuts.items():
+                widget.bind(key, lambda event, target=button: self._shortcut(event, target))
+            widget.bind("<F6>", self._switch_pane)
+            widget.bind("<Shift-F6>", self._switch_pane)
+        self.tree.bind("<Return>", self._edit_selected)
+        self.editor.bind("<Tab>", lambda event: self._leave_editor(False))
+        self.editor.bind("<Shift-Tab>", lambda event: self._leave_editor(True))
+
+    def _keyboard_available(self, event) -> bool:
+        return (
+            not self.closed
+            and event.widget.winfo_toplevel() == self.root
+            and not self.root.tk.call("grab", "current", self.root._w)
+        )
+
+    def _shortcut(self, event, button) -> str:
+        if self._keyboard_available(event) and not button.instate(["disabled"]):
+            button.invoke()
+        return "break"
+
+    def _keyboard_help(self) -> None:
+        messagebox.showinfo(
+            "Keyboard shortcuts",
+            "Ctrl+I: add images\nCtrl+Shift+I: open folder\n"
+            "Ctrl+O: open session\nCtrl+S: save session\n"
+            "Ctrl+Enter: generate captions\nEsc: cancel running batch\n"
+            "Ctrl+E: export results\nF6 / Shift+F6: queue or caption editor\n"
+            "Enter in queue: edit selected caption\n"
+            "Tab / Shift+Tab: next / previous control (also in the editor)\n"
+            "Arrow keys: select an image or caption length\n"
+            "Space: activate a focused button or checkbox\n"
+            "F1: show this help\n\n"
+            "Shortcuts respect disabled controls. Cancelling finishes the current "
+            "model operation. Normal text selection, copy, paste, and undo stay available.",
+            parent=self.root,
+        )
+
+    def _initial_focus(self) -> None:
+        if not self.closed and self.root.focus_get() is None:
+            if self.rows:
+                self._focus_queue()
+            else:
+                self.add_button.focus_set()
+
+    def _focus_queue(self) -> None:
+        if self.rows:
+            selected = self.tree.selection()
+            key = selected[0] if selected else next(iter(self.rows))
+            self.tree.selection_set(key)
+            self.tree.focus(key)
+            self.tree.see(key)
+            self.tree.focus_set()
+        else:
+            self.add_button.focus_set()
+
+    def _edit_selected(self, event) -> str:
+        if self._keyboard_available(event) and str(self.editor["state"]) == "normal":
+            self.editor.focus_set()
+        return "break"
+
+    def _switch_pane(self, event) -> str:
+        if self._keyboard_available(event):
+            if self.root.focus_get() != self.editor and str(self.editor["state"]) == "normal":
+                self.editor.focus_set()
+            else:
+                self._focus_queue()
+        return "break"
+
+    def _leave_editor(self, backwards: bool) -> str:
+        self._save_edit()
+        target = self.editor.tk_focusPrev() if backwards else self.editor.tk_focusNext()
+        target.focus_set()
+        return "break"
 
     def add_paths(self, paths: list[Path]) -> None:
         try:
@@ -292,6 +416,8 @@ class CaptionApp:
                 self.tree.selection_set(next(iter(self.rows)))
             self.status.set(f"Added {len(new)} image(s). Select Generate captions when ready.")
             self._update_controls()
+            if new:
+                self._focus_queue()
         except (ImageInputError, OSError) as exc:
             messagebox.showerror("Could not add images", str(exc), parent=self.root)
 
@@ -440,7 +566,8 @@ class CaptionApp:
             )
         self.editor.edit_reset()
         self.editor.edit_modified(False)
-        self.editor.configure(state="normal" if row and row.status == "done" else "disabled")
+        editable = bool(row and row.status == "done")
+        self.editor.configure(state="normal" if editable else "disabled", takefocus=editable)
 
     def _editor_modified(self, _event=None) -> None:
         if self.editor.edit_modified():
@@ -565,6 +692,7 @@ class CaptionApp:
         self.status.set(
             "Cancelling after the current model operation. Completed captions are kept."
         )
+        self._update_controls()
 
     def _retry(self) -> None:
         if self.busy:
@@ -808,6 +936,7 @@ class CaptionApp:
         if self.recovery is not None:
             self.autosave_status.set("Automatic recovery ready.")
         self._update_controls()
+        self._focus_queue()
 
     def _reset_workspace(self) -> None:
         self._cancel_autosave()
@@ -838,6 +967,7 @@ class CaptionApp:
         self._reset_workspace()
         self.status.set("Workspace cleared. Your original images are unchanged.")
         self._update_controls()
+        self.add_button.focus_set()
 
     def _update_controls(self) -> None:
         done = sum(row.status == "done" for row in self.rows.values())
@@ -874,6 +1004,20 @@ class CaptionApp:
             if any(row.status in {"done", "error"} for row in self.rows.values())
             else "disabled"
         )
+        selected = self.rows.get(self.current)
+        caption_state = "normal" if selected and selected.status == "done" else "disabled"
+        self.copy_button.configure(state=caption_state)
+        self.restore_button.configure(state=caption_state)
+        focused = self.root.focus_get()
+        if focused in self.keyboard_controls and (
+            str(focused["state"]) == "disabled"
+            if focused == self.editor
+            else focused.instate(["disabled"])
+        ):
+            if self.busy and not self.cancel_button.instate(["disabled"]):
+                self.cancel_button.focus_set()
+            else:
+                self._focus_queue()
 
     def _close(self) -> None:
         self._save_edit()

@@ -4,6 +4,10 @@ LC08 builds a portable folder with a windowed desktop launcher and a console lau
 Keep the whole output folder together. Model weights are downloaded separately.
 This is a repeatable pinned recipe; identical binary hashes across rebuilds are not promised.
 
+The existing local LC08 bundle is a snapshot of that checkpoint. Later source
+changes, including LC10 keyboard support, require a new build with a new BuildName.
+Do not treat the old executable's successful smoke report as validation of new code.
+
 ## Build prerequisites and command
 
 Use Windows x64, CPython 3.11.9, and the existing source environment created by
