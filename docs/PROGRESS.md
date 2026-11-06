@@ -121,3 +121,17 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Selection/source hashes are recorded in an ignored local aggregate audit. No images were opened or inference run; no quality scores or human ratings exist for this checkpoint.
 - Documentation checks cover relative links, paths, control characters, task consistency, and git diff whitespace. Existing 188-test/Ruff/offline evidence remains the LC05 baseline; no functional code changed.
 - Tutorial originals, datasets, captions, weights, and local reports remain excluded. GitHub Actions stays disabled. Next: LC07, evaluation runner and measured baseline.
+
+## 2026-11-05 - LC07: evaluation runner and measured baseline
+
+- Added a separate freeze/run CLI with deterministic selection, strict manifest checks, explicit BLEU-1/BLEU-4/ROUGE-L scoring, fixed offline CPU settings, and source/environment hashes. The desktop and shared inference engine are unchanged.
+- Retain all 50 test rows across missing/corrupt/changed inputs, model failures, and interruption. Atomically checkpoint progress; refuse output reuse; sanitize errors and keep all raw artifacts inside ignored local storage.
+- Added 64 synthetic tests for metric edge cases and non-perfect scores, reference validation, stable sampling/exclusions, changed files, partial reports, offline guards, timing, blank human reviews, and CLI output protection. Final full suite: 252 passed; Ruff lint/format: 21 files.
+- Frozen manifest matches LC06's dataset/selection/exclusion hashes. Real cached-model evaluation completed 50/50 with no image failures or network attempts. BLEU-1 57.60, BLEU-4 21.46, ROUGE-L 47.21 are reference-overlap scores, not accuracy percentages.
+- Verified all 60 selected input hashes, original split/reference hashes, frozen manifest, protocol, dependency lock, and runtime source hashes. Raw captions, references, reports, and review templates stay local.
+- Human review remains pending at 0/50. Some synthetic tests ran concurrently, so recorded timing is not an isolated performance benchmark. No controlled comparison with the tutorial or guarantee of upstream training-data independence.
+- Updated usage, validation, and compact handoff. GitHub Actions remains disabled. Next: LC08, reproducible Windows executable build.
+
+## 2026-11-06 - LC07: publication checkpoint
+
+- Resumed publication after interruption; implementation and baseline were completed in the preceding session. Rechecked documentation and publication exclusions before committing the existing tested work.

@@ -1,10 +1,10 @@
 # LumaCaption status
 
-Updated: 2026-11-05 (America/Chicago)
+Updated: 2026-11-06 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC06 - reproducible evaluation protocol complete
-Next task: LC07 - evaluation runner and measured baseline
+Current checkpoint: LC07 - evaluation runner and measured baseline complete
+Next task: LC08 - reproducible Windows executable build
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
@@ -12,27 +12,27 @@ GitHub Actions: disabled at user request; local checks required; do not re-enabl
 
 ## Verified baseline
 
-- LC06 is documentation only; links, paths, consistency, and whitespace checked.
-- Local metadata audit: disjoint 6000/1000/1000 train/dev/test lists.
-- Fixed 50 test + 10 dev selections have files and five references each.
-- No images decoded, inference run, quality scores, or human ratings in LC06.
-- Prior LC05 baseline: 188 tests and Ruff for 18 Python files passed.
-- Prior real diagnostics passed; cache presence is not inference proof.
-- Prior offline regression: zero network attempts, unchanged photos, matching
-  desktop-worker captions and CSV/JSON exports; total 30.658 seconds.
-- Reuse .venv and .cache/models; .local reports remain ignored.
+- 252 tests passed (64 evaluation, 188 existing); Ruff passed for 21 Python files.
+- Evaluation CLI: python -m lumacaption.evaluate freeze/run; see docs/EVALUATION.md.
+- Frozen manifest matches LC06 selection/source/exclusion digests.
+- Real CPU baseline: 50/50 captions, zero image errors, zero network attempts.
+- BLEU-1 57.60, BLEU-4 21.46, ROUGE-L 47.21; overlap scores, not accuracy.
+- Test wall time 222.338 seconds; timings include concurrent synthetic-test activity.
+- All 60 selected image hashes and source/reference hashes remain unchanged.
+- Human review is pending (0/50); no tutorial quality comparison has been run.
+- Local evidence: .local/evaluation/v1/baseline-2026-11-05-01/.
+- Shared desktop/CLI engine behavior unchanged; prior LC05 offline smoke still applies.
+- Reuse .venv and .cache/models; private reports/manifests remain ignored.
 
-## LC07 starting points
+## LC08 starting points
 
-- Implement docs/EVALUATION.md exactly; create a private frozen manifest first.
-- Use the shared offline engine; test metrics/selection/failures with synthetic data.
-- Preserve all 50 rows and distinguish failed, incomplete, and unreviewed results.
-- Keep source images/references/manifests/generated reports outside Git.
-- Local metadata audit: .local/evaluation-protocol-audit-2026-11-05.json.
-- Run a real baseline if data/cache remain available; do not invent human ratings.
-- Evaluation quality and upstream training-data overlap remain unverified.
+- Add a reproducible Windows executable build script/spec and dependency notices.
+- Verify launch and real captioning on this development machine.
+- Keep model weights separate; ignore build artifacts; preserve existing source launchers.
+- Inspect current package entry points and Windows scripts before choosing packaging.
+- Clean-machine verification is LC09 and must remain separate from local build success.
 
 ## Outstanding evidence
 
-Clean-machine installation, packaged runtime, manual visual/accessibility acceptance,
-comparative benchmarks, and GPU execution remain unverified.
+Packaged runtime, clean-machine installation, human caption review, manual visual/
+accessibility acceptance, comparative benchmarks, and GPU execution remain unverified.

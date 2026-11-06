@@ -4,7 +4,7 @@ Protocol: LumaCaption-eval-v1
 
 Recorded: 2026-11-05
 
-Status: protocol only; runner and measured baseline are LC07.
+Status: implemented by the LC07 freeze/run CLI. See [validation evidence](VALIDATION.md) for measured results and remaining human review.
 
 ## Purpose and limits
 
@@ -98,3 +98,41 @@ Record reviewer pseudonym, review time, and rubric version. Report reviewed/succ
 - Update this protocol/version before changing selection, tokenizer, metrics, or generation settings; retain previous manifests and reports.
 
 See [validation evidence](VALIDATION.md), [execution plan](PLAN.md), and [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## Running the implementation on Windows
+
+From the LumaCaption project directory, use the installed virtual environment. The CLI restricts outputs to .local/evaluation/v1/ and refuses to overwrite an existing manifest or run directory. Raw content stays in these ignored files; terminal output contains progress and aggregate scores only.
+
+Freeze before generation, including all previous smoke reports and any additional known manual-use exclusions. The optional --exclusions file is a private JSON object mapping image basenames to short reasons. This command uses the supplied sibling dataset directories:
+
+~~~powershell
+$freezeArgs = @(
+    "-m", "lumacaption.evaluate", "freeze",
+    "--text-root", "..\Flickr8k_text",
+    "--image-root", "..\Flickr8k_Dataset\Flicker8k_Dataset",
+    "--output", ".local\evaluation\v1\manifest.json"
+)
+Get-ChildItem ".local\offline-*.json" | ForEach-Object {
+    $freezeArgs += @("--smoke-report", $_.FullName)
+}
+& .\.venv\Scripts\python.exe @freezeArgs
+~~~
+
+Inspect the private manifest metadata and exclusion reasons before starting. Do not tune selection based on images or reference quality. Keep the same manifest for repeat runs, choosing a fresh run folder each time:
+
+~~~powershell
+$runArgs = @(
+    "-m", "lumacaption.evaluate", "run",
+    "--manifest", ".local\evaluation\v1\manifest.json",
+    "--image-root", "..\Flickr8k_Dataset\Flicker8k_Dataset",
+    "--cache-dir", ".cache\models",
+    "--output", ".local\evaluation\v1\baseline-01"
+)
+& .\.venv\Scripts\python.exe @runArgs
+~~~
+
+Each run copies the exact frozen manifest and writes report.json incrementally using atomic replacement. Forced process termination can leave state=running; treat it as provisional. Normal Ctrl+C records state=interrupted and returns exit 130. Exit 0 means a complete run with no image errors; exit 1 means a partial run or image failures; exit 2 means invalid input/output before a usable result. Preparation or warmup failures stop test generation. Input hashes are checked before and after captioning; changed images count as failures. Successful image timings cover loading and inference; hash checks and checkpoint writes are included only in total test wall time. Failed-image timings include validation work.
+
+review-template.json contains successful captions in the specified review order, with every human-rating field blank. Save actual human ratings in a separate private copy; the runner does not infer ratings or import completed reviews. Its human-review summary therefore remains pending. A later reviewed summary must follow the rubric above.
+
+Reports include source-file hashes alongside the Git commit/dirty flag so a run made before the checkpoint commit can be matched to its final source. Record protocol and dependency hashes too. Review aggregate values before copying them into public documentation; never publish the raw report, manifest, reference captions, or review template.

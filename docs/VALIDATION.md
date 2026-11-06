@@ -106,3 +106,31 @@ Documentation only: added the [versioned evaluation protocol](EVALUATION.md) and
 Read-only local metadata checks found 6000 train, 1000 dev, and 1000 test identifiers with no duplicates or pairwise overlap. Raw references contain 40460 rows for 8092 identifiers. All 1000 test identifiers have five references and existing image paths. Deterministic selection produced 50 test and 10 dev images, all with existing paths and references numbered 0-4. Two known prior smoke-test identifiers do not intersect dev/test. Source and selection digests are retained in ignored .local/evaluation-protocol-audit-2026-11-05.json; the complete private image-hash manifest belongs to LC07.
 
 No image decoding, inference, quality scoring, or human review occurred. Relative documentation links, local starting paths, control characters, task states, and git diff whitespace were checked. No application code changed, so the prior LC05 automated and offline checks were not repeated. GitHub Actions remains disabled; no hosted run is expected. Data, original scripts, references, and reports remain outside the published files.
+
+## LC07 evaluation runner and baseline (2026-11-05)
+
+All 252 tests passed, including 64 new synthetic evaluation cases. Coverage includes deterministic selection/exclusions, malformed splits/references/manifests, corpus clipping and brevity penalty, non-perfect BLEU geometric means, short/empty hypotheses, five-reference LCS scoring, changed/missing/corrupt images, fatal and interrupted runs, offline network guards, timing summaries, output reuse, private CLI output, and unreviewed human fields. Ruff lint/format passed for all 21 Python files. The shared image loader, model engine, and desktop behavior did not change; the previous real desktop smoke remains applicable.
+
+The [documented protocol](EVALUATION.md) was run locally with the pinned BLIP base model, CPU, Standard/35 tokens, three beams, no sampling, and the existing image preprocessing. The frozen 50-test/10-dev manifest matches all LC06 source, selection, and exclusion digests. Only the first dev image was used for warmup; no tuning was performed.
+
+| Measure | Observed result |
+| --- | --- |
+| Completed test captions | 50/50 |
+| Image failures / not processed | 0 / 0 |
+| Blocked network attempts | 0 |
+| Corpus BLEU-1 | 57.60 |
+| Corpus BLEU-4 | 21.46 |
+| Mean best-reference ROUGE-L F1 | 47.21 |
+| Model preparation | 18.148 seconds |
+| Dev warmup | 15.529 seconds |
+| Total test wall time | 222.338 seconds |
+| Successful load/inference median / p95 | 4.118 / 5.712 seconds |
+| Human reviews supplied | 0/50; pending |
+
+Lexical scores use the protocol's 0-100 scale, not an accuracy percentage. This small subset and tokenizer do not reproduce a published benchmark. Upstream training-data overlap is unknown, and there is no controlled tutorial comparison. Human quality, hallucination, and acceptance ratings remain null until an actual reviewer supplies them.
+
+Environment: Windows (Python platform release 10), Intel Core i5-7200U CPU at 2.50 GHz, four configured Torch threads, Python 3.11.9, Pillow 12.3.0, torch 2.15.0, transformers 4.57.6. Some synthetic tests ran concurrently with inference; these timings describe this run and are not an isolated performance benchmark.
+
+The run started at 2026-11-06T04:26:08.857781+00:00 and ended at 2026-11-06T04:30:25.310109+00:00 (UTC; November 5 in America/Chicago). It recorded parent Git commit 5841eee with a dirty working tree and exact runtime-source hashes; every recorded source hash was verified against the final LC07 implementation. Protocol and dependency-lock hashes also match. Manifest SHA-256: dbc2eacc8917657dce0ce727a51a855c70a0bad767bf0c6353128dc96692535b.
+
+All 60 selected image hashes and original split/reference file hashes were verified unchanged after evaluation. Private evidence lives under .local/evaluation/v1/baseline-2026-11-05-01/: manifest.json, report.json, review-template.json, and verification.json. The last file records the post-run hash checks and concurrent-work timing limitation. These artifacts, dataset content, and original tutorial files remain excluded from Git. GitHub Actions remains disabled.
