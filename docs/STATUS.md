@@ -3,8 +3,8 @@
 Updated: 2026-11-06 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC10 - keyboard navigation and focus complete
-Next action: LC11 - manual accessibility acceptance with a tester
+Current checkpoint: LC11 - partial feedback recorded; acceptance blocked
+Next action: LC12 - optional device selection with CPU fallback
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
@@ -27,9 +27,10 @@ GitHub Actions: disabled at user request; local checks required; do not re-enabl
 
 LC09 is blocked: no clean Windows host/VM was supplied; no Sandbox/VM tooling was
 found on this Windows 10 Home build 19045 development host. No clean-machine pass.
-LC11 needs an actual tester with Windows assistive technology; use the walkthrough
-in docs/KEYBOARD.md. Automated tests stub native dialogs and the model; manual
-keyboard/dialog navigation, announcements, high-DPI and visual acceptance are pending.
-If LC11 cannot run, record the blocker and choose the next ready independent task.
-LC12 optional device selection remains planned; GPU performance needs hardware.
-Three phases remain: blocked LC09, next LC11, and planned LC12.
+LC11: user reports visual/captioning success, but used no screen reader and did not
+try final edit/export/session checks. Screen-reader testing deferred at user request.
+Private evidence: .local/lc11-review-2026-11-06/; no accessibility acceptance claim.
+LC12 is next: inspect available hardware, keep CPU default, add explicit device
+selection/fallback and tests. Do not replace the working CPU dependency setup.
+Only measure GPU speed/memory on supported hardware; document unavailable evidence.
+Three phases remain: blocked LC09 and LC11, next LC12.

@@ -227,3 +227,25 @@ remain unverified. See the [LC11 walkthrough](KEYBOARD.md). The LC08 executable
 was not rebuilt for this source-only checkpoint; its successful frozen smoke remains
 evidence for the LC08 snapshot only. Use the source launcher or make a new named
 build to include LC10. GitHub Actions remains disabled.
+
+## LC11 partial manual feedback (2026-11-06)
+
+The user tested the source desktop at b7dc980 and reported that the application and
+captioning worked well. The app was started offline with the existing cached model
+and a separate recovery directory. Two original synthetic image fixtures were
+prepared locally. Recorded environment: Windows 10 Home build 19045, 1366x768
+display, Tk 8.6.12, Tk scaling approximately 1.335. This is not a caption-quality
+benchmark or evidence that every prepared fixture was used.
+
+Follow-up clarified that the user **did not use a screen reader** and **had not
+tried the final edit/export/save/reopen/cancel checks**. The user then requested
+skipping screen-reader testing for now. Therefore spoken names, announcements,
+progress/errors with assistive technology, and those manual persistence flows are
+still unverified. LC11 remains blocked, not passed. The initial broad positive
+feedback must not be interpreted as acceptance of these untested areas.
+
+No defect was reported and no code changed in this checkpoint. Existing automated
+LC10 results remain applicable; documentation/link/whitespace checks were performed
+without repeating tests or inference. Private setup and raw observations remain in
+.local/lc11-review-2026-11-06/. Resume the [manual walkthrough](KEYBOARD.md) when
+the user is ready; proceed independently with LC12 in the meantime.

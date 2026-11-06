@@ -155,3 +155,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Ten new real-Tk keyboard/layout cases pass; full regression: 280 passed in 25.10 seconds. Ruff lint/format passed for 25 Python files. Tests use a fake captioner and stubbed native-dialog responses; no model download or inference rerun was needed.
 - Documented shortcuts and an LC11 manual walkthrough. The existing LC08 executable remains an older snapshot; source launcher includes these changes, and a new named build is required for updated binaries.
 - Tutorial files, datasets, photos, weights, environments, and generated output remain excluded. GitHub Actions stays disabled. Next: LC11 manual accessibility acceptance; LC09 awaits a clean environment.
+
+## 2026-11-06 - LC11: partial manual feedback; accessibility acceptance deferred
+
+- Opened the current source app at b7dc980 with offline mode, the existing model cache, and an isolated recovery directory. Created two original synthetic image fixtures under ignored local storage. Recorded a 1366x768 display and Tk 8.6.12; no user recovery files were replaced.
+- User reported the app and captioning worked well. Follow-up clarified that no screen reader was used and the final edit/export/save/reopen/cancel checks had not been tried. This is positive visual/captioning feedback, not completed accessibility or persistence acceptance.
+- User requested skipping screen-reader testing for now. Marked LC11 blocked and retained the walkthrough for later. No application defect was reported or source fix made.
+- Documentation-only checkpoint: checked links, status/task consistency, whitespace, and publication exclusions. Existing 280-test LC10 evidence remains unchanged; no tests or inference were rerun.
+- Raw observations and fixtures remain private. GitHub Actions stays disabled. Next: LC12 optional device selection with CPU fallback; LC09 and LC11 still need their external test conditions.
