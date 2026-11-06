@@ -134,3 +134,54 @@ Environment: Windows (Python platform release 10), Intel Core i5-7200U CPU at 2.
 The run started at 2026-11-06T04:26:08.857781+00:00 and ended at 2026-11-06T04:30:25.310109+00:00 (UTC; November 5 in America/Chicago). It recorded parent Git commit 5841eee with a dirty working tree and exact runtime-source hashes; every recorded source hash was verified against the final LC07 implementation. Protocol and dependency-lock hashes also match. Manifest SHA-256: dbc2eacc8917657dce0ce727a51a855c70a0bad767bf0c6353128dc96692535b.
 
 All 60 selected image hashes and original split/reference file hashes were verified unchanged after evaluation. Private evidence lives under .local/evaluation/v1/baseline-2026-11-05-01/: manifest.json, report.json, review-template.json, and verification.json. The last file records the post-run hash checks and concurrent-work timing limitation. These artifacts, dataset content, and original tutorial files remain excluded from Git. GitHub Actions remains disabled.
+
+## LC08 Windows executable build (2026-11-06)
+
+Built the [pinned portable-folder recipe](PACKAGING.md) on the Windows development
+machine using CPython 3.11.9 x64, PyInstaller 6.22.3, hooks 2026.9, and the unchanged
+runtime dependency lock. The shared analysis produced both LumaCaption.exe
+(windowed) and LumaCaption-CLI.exe (console). Compilation succeeded; the initial
+finalization rejected pip editable-install source metadata. The build now removes
+only generated direct_url.json files within its output tree before final checks.
+The already compiled bundle was finalized with that corrected step.
+
+| Check | Result |
+| --- | --- |
+| Full synthetic suite | 270 passed in 28.43 seconds |
+| Ruff lint / formatting | Passed, 25 Python files |
+| pip check / PowerShell build-script syntax | Passed |
+| Console help / frozen diagnostics | Passed, all reported runtime/cache checks OK |
+| Console packaged smoke | Exit 0; 40.405 seconds |
+| Windowed packaged smoke | Exit 0; 30.444 seconds |
+| Inputs per smoke | 2; same captions as source LC05 run |
+| Network attempts per smoke | 0 |
+| Input hashes / desktop worker / JSON and CSV exports | Passed for both launchers |
+| Bundle file hashes / source hashes | 6,200 / 23, all verified |
+| Bundle bytes (excluding build-info.json) | 651,812,518 (621.6 MiB) |
+| Dependency notice inventory entries | 37, including build tools |
+
+Both executable smoke tests used the existing pinned BLIP cache through
+LUMACAPTION_CACHE, blocked HTTP and socket connections, and exercised actual CPU
+inference. They created a real withdrawn Tk window, generated a caption through
+its worker, and checked exports. Recovery was disabled for these tests, and input
+hashes remained unchanged. The windowed executable was explicitly awaited and
+its exit code checked. This is automated runtime verification, not visual or
+keyboard/accessibility acceptance. Timings include startup/model work and are not
+an isolated performance benchmark.
+
+Private reports: .local/packaged-lc08-cli-2026-11-06.json and
+.local/packaged-lc08-gui-2026-11-06.json; adjacent logs retain raw output.
+Build log: build/LumaCaption-0.1.0-win64/build.log. Local executable folder:
+dist/LumaCaption-0.1.0-win64/LumaCaption/. Its build-info.json records exact
+dependency versions and SHA-256 hashes. Bundle validation found no model artifacts
+or pip source-URL files; Python, Tcl 8.6.12, Tk, and dependency notices are retained.
+Tracked-file and reachable-history checks exclude tutorial originals and datasets;
+the bundle, weights, images, and raw reports remain outside Git.
+
+Optional Torch build warnings about tensorboard, CUDA, and a non-Windows OpenMP
+path did not prevent the exercised CPU BLIP path. No GPU support is claimed.
+The package is unsigned and contains no installer. This development-machine result
+does not establish independence from the source environment: clean Windows/VM
+installation, initial model download, and offline restart remain LC09. Bit-for-bit
+rebuild reproducibility, manual acceptance, and human caption review are unverified.
+GitHub Actions remains disabled.

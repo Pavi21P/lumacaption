@@ -3,8 +3,8 @@
 Updated: 2026-11-06 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC07 - evaluation runner and measured baseline complete
-Next task: LC08 - reproducible Windows executable build
+Current checkpoint: LC08 - portable Windows executable build complete
+Next action: LC09 - clean Windows distribution verification
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
@@ -12,27 +12,24 @@ GitHub Actions: disabled at user request; local checks required; do not re-enabl
 
 ## Verified baseline
 
-- 252 tests passed (64 evaluation, 188 existing); Ruff passed for 21 Python files.
-- Evaluation CLI: python -m lumacaption.evaluate freeze/run; see docs/EVALUATION.md.
-- Frozen manifest matches LC06 selection/source/exclusion digests.
-- Real CPU baseline: 50/50 captions, zero image errors, zero network attempts.
-- BLEU-1 57.60, BLEU-4 21.46, ROUGE-L 47.21; overlap scores, not accuracy.
-- Test wall time 222.338 seconds; timings include concurrent synthetic-test activity.
-- All 60 selected image hashes and source/reference hashes remain unchanged.
-- Human review is pending (0/50); no tutorial quality comparison has been run.
-- Local evidence: .local/evaluation/v1/baseline-2026-11-05-01/.
-- Shared desktop/CLI engine behavior unchanged; prior LC05 offline smoke still applies.
-- Reuse .venv and .cache/models; private reports/manifests remain ignored.
+- 270 tests passed; Ruff lint/format passed for 25 Python files; pip check passed.
+- Pinned PyInstaller recipe: Build-Windows.ps1; instructions in docs/PACKAGING.md.
+- Local bundle: dist/LumaCaption-0.1.0-win64/LumaCaption/ (621.6 MiB).
+- Desktop and console executables passed offline captioning on two local photos.
+- Both matched source captions; zero network attempts; input hashes unchanged.
+- Both exercised a real withdrawn Tk window, desktop worker, and CSV/JSON exports.
+- Frozen diagnostics passed Python/Tk/import/cache checks.
+- Bundle: 6,200 file hashes and 23 source hashes verified; notices retained.
+- No weights, tutorial data, or editable-install source URLs in the bundle.
+- Local reports: .local/packaged-lc08-{cli,gui}-2026-11-06.json.
+- LC07 baseline remains 50/50 captions; BLEU-1 57.60, BLEU-4 21.46, ROUGE-L 47.21.
+- Reuse .venv and .cache/models; reports/builds stay ignored.
 
-## LC08 starting points
+## Next task and limits
 
-- Add a reproducible Windows executable build script/spec and dependency notices.
-- Verify launch and real captioning on this development machine.
-- Keep model weights separate; ignore build artifacts; preserve existing source launchers.
-- Inspect current package entry points and Windows scripts before choosing packaging.
-- Clean-machine verification is LC09 and must remain separate from local build success.
-
-## Outstanding evidence
-
-Packaged runtime, clean-machine installation, human caption review, manual visual/
-accessibility acceptance, comparative benchmarks, and GPU execution remain unverified.
+LC09 needs a clean Windows machine/VM with no development environment. Record its
+environment, model setup, path-with-spaces launch, and offline restart. If unavailable,
+mark blocked and choose only the next ready independent task per AGENTS.md.
+This unsigned portable build is verified only on the development machine.
+Human caption review, manual visual/accessibility acceptance, comparative benchmarks,
+and GPU execution remain unverified. Four planned phases remain: LC09-LC12.

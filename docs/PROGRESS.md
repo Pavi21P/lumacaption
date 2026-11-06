@@ -135,3 +135,13 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 ## 2026-11-06 - LC07: publication checkpoint
 
 - Resumed publication after interruption; implementation and baseline were completed in the preceding session. Rechecked documentation and publication exclusions before committing the existing tested work.
+
+## 2026-11-06 - LC08: portable Windows executable build
+
+- Added a pinned PyInstaller folder recipe with desktop and console launchers, frozen diagnostics, a bundled offline smoke command, source/file checksums, and dependency notices. Existing source launchers and CPU generation settings remain unchanged.
+- Build refuses existing output, checks Python/dependency versions, keeps weights separate, and strips generated pip source-URL metadata before finalization. Retained Python, Tcl/Tk, and dependency license texts; build artifacts stay ignored.
+- Built a 621.6 MiB folder with 6,200 verified file hashes and 23 matching source hashes. Python 3.11.9 x64, PyInstaller 6.22.3, hooks 2026.9. The initial finalization correctly rejected editable-install metadata; corrected cleanup and finalized the compiled bundle.
+- Full regression: 270 tests passed, Ruff lint/format for 25 Python files, pip check, and PowerShell syntax validation passed.
+- Console and windowed executables each captioned two local photos offline, matched prior source captions, preserved inputs, and passed real Tk worker plus CSV/JSON export checks. Zero network attempts; smoke times 40.405 and 30.444 seconds respectively.
+- Help and frozen diagnostics passed. Tracked files and reachable history exclude tutorial originals, datasets, photos, weights, caches, and generated output. GitHub Actions remains disabled.
+- No installer, signature, binary release, clean-machine claim, or manual visual/accessibility acceptance. Next: LC09 clean Windows distribution verification.

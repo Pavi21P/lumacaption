@@ -29,7 +29,11 @@ CACHE_FILES = (
     "vocab.txt",
     "pytorch_model.bin",
 )
-SETUP_HINT = "Run Setup-Windows.ps1 with supported 64-bit Python."
+SETUP_HINT = (
+    "Re-extract the complete LumaCaption folder and retry."
+    if getattr(sys, "frozen", False)
+    else "Run Setup-Windows.ps1 with supported 64-bit Python."
+)
 PROBE_TIMEOUT = 45
 
 
@@ -130,8 +134,13 @@ def _probe_runtime() -> dict[str, bool]:
 def check_runtime() -> dict[str, bool] | None:
     try:
         flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+        command = (
+            [str(Path(sys.executable).with_name("LumaCaption-CLI.exe")), "--_runtime-probe"]
+            if getattr(sys, "frozen", False)
+            else [sys.executable, "-m", "lumacaption.diagnostics", "--probe"]
+        )
         completed = subprocess.run(
-            [sys.executable, "-m", "lumacaption.diagnostics", "--probe"],
+            command,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -170,8 +179,12 @@ def check_cache(directory: Path | None = None) -> Check:
             "Model cache",
             False,
             "Missing, unreadable, or invalid cached files. "
-            "Run Launch-LumaCaption.cmd --download-model when online; "
-            "use the same LUMACAPTION_CACHE setting for both commands.",
+            + (
+                "Run LumaCaption-CLI.exe --download-model when online; "
+                if getattr(sys, "frozen", False)
+                else "Run Launch-LumaCaption.cmd --download-model when online; "
+            )
+            + "use the same LUMACAPTION_CACHE setting for both commands.",
         )
 
 
@@ -197,7 +210,7 @@ def collect_checks() -> list[Check]:
                 "Runtime probe",
                 False,
                 "Probe failed or exceeded 45 seconds. Close busy apps and rerun; "
-                "if it persists, rerun Setup-Windows.ps1.",
+                "if it persists, " + SETUP_HINT,
             )
         )
     for name in DEPENDENCIES:

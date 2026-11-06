@@ -79,6 +79,14 @@ Exit code 0 means every reported check passed; 1 means at least one check needs 
 
 For scripted use without the launcher's pause on failures, run .venv/Scripts/python.exe -m lumacaption --diagnose with LUMACAPTION_CACHE set to .cache/models. Direct invocation otherwise uses the regular app-data cache, as described above.
 
+## Portable Windows executable
+
+Build a portable folder with desktop and console launchers using
+Build-Windows.ps1 -InstallBuildTools. The pinned recipe requires Windows x64
+and CPython 3.11.9; see [build and verification instructions](docs/PACKAGING.md).
+Keep the complete output folder together. Model weights are a separate download.
+This development build is unsigned; clean-machine verification is still pending.
+
 ## Working with captions
 
 1. Select **Add images** or **Open folder**.
@@ -121,12 +129,12 @@ Run checks from this directory:
 
 ~~~powershell
 .\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m ruff check src tests scripts
-.\.venv\Scripts\python.exe -m ruff format --check src tests scripts
+.\.venv\Scripts\python.exe -m ruff check src tests scripts packaging/entry.py
+.\.venv\Scripts\python.exe -m ruff format --check src tests scripts packaging/entry.py
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 252 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 270 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 The [evaluation protocol and CLI instructions](docs/EVALUATION.md) define a fixed 50-image local test subset, lexical metrics, and a separate human-review rubric. The first offline run completed all 50 images with zero network attempts: BLEU-1 57.60, BLEU-4 21.46, and ROUGE-L 47.21 on the defined 0-100 scales. These are reference-overlap scores, not accuracy percentages or proof of improvement over the tutorial. Human review is pending; see the [configuration, timings, and limitations](docs/VALIDATION.md#lc07-evaluation-runner-and-baseline-2026-11-05).
 
