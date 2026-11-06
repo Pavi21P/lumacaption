@@ -1,6 +1,6 @@
 # Saved-session storage (schema 1)
 
-LC01 provides the storage API; LC02 adds desktop Save/Open controls; LC03 adds local recovery.
+LC01 provides storage; LC02 adds desktop Save/Open; LC03 adds local recovery; LC04 adds missing-image relinking.
 
 ## Desktop behavior
 
@@ -10,7 +10,15 @@ Queue additions, generated results, caption edits, retries, and setting changes 
 
 Save/Open and Clear are disabled while generation runs. Cancel the batch and wait for the current operation to finish before saving. Restored pending rows stay pending until Generate is clicked. Caption length, beam count, offline mode, and recursive-folder settings are preserved; the desktop does not expose a beam-count editor.
 
-Missing or unavailable paths receive a red Missing display state and a preview warning. Their stored result status, captions, edits, timing, and provenance stay intact. Completed captions remain editable and exportable even without the image. Missing rows are excluded from generation and retry so retained text cannot be overwritten by another missing-file failure. Restore the image at its saved path and reopen the session to refresh availability. Relinking is LC04.
+Missing or unavailable paths receive a red Missing display state and a preview warning. Their stored result status, captions, edits, timing, and provenance stay intact. Completed captions remain editable and exportable even without the image. Missing rows are excluded from generation and retry so retained text cannot be overwritten by another missing-file failure. Select the missing row and use Relink image to locate its file. If you restore the file at the original path, reselecting the row also refreshes availability.
+
+## Relinking images
+
+Select a Missing row, then **Relink image...**. The native dialog accepts supported image types. The replacement must exist, decode successfully, and pass the existing file-size/dimension limits before the old row changes. Cancelling, choosing a directory/unsupported/damaged/unavailable file, or encountering a read error leaves the path and captions intact.
+
+Relinking rejects files already used by another row, including Windows case/slash variants and existing file aliases. On success, it replaces only the path, keeps queue order and selection, refreshes the preview, and preserves caption text, edits, result status/errors, timing, and model provenance. It marks the workspace unsaved and schedules recovery; use Save session to retain the new path permanently. No image file is modified.
+
+Generation stays stopped. A pending row becomes ready for Generate; an existing error retains its status until the user chooses Retry errors. Completed captions stay completed. The user must review the retained caption against the selected image; the app cannot establish that the replacement has identical content. Relinking is disabled during a batch and for healthy rows. If a file moves while the app is open, selecting its row detects its absence and enables relinking.
 
 ## Autosave and recovery
 

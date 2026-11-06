@@ -2,6 +2,7 @@
 
 import time
 import tkinter as tk
+from dataclasses import replace
 
 import pytest
 from PIL import Image
@@ -672,3 +673,266 @@ def test_failed_manual_save_keeps_recovery_copy(desktop, tmp_path, monkeypatch):
     )
     assert not app._save_session()
     assert app.recovery.path.read_bytes() == original and app.dirty
+
+
+def missing_workspace(root, app, tmp_path, *, status="done"):
+    row = CaptionResult(
+        str(tmp_path / "old folder" / "missing photo.png"),
+        caption="Reviewed caption",
+        generated_caption="Original AI caption",
+        edited=True,
+        status=status,
+        error="Earlier failure" if status == "error" else "",
+        elapsed_seconds=2.5,
+        model="saved-model",
+        model_revision="saved-revision",
+        created_at="2026-11-01T12:00:00+00:00",
+    )
+    app._apply_session(Session(results=[row]))
+    root.update()
+    assert row.path in app.image_errors
+    return row
+
+
+def choose_replacement(app, monkeypatch, path):
+    monkeypatch.setattr("lumacaption.desktop.filedialog.askopenfilename", lambda **kw: str(path))
+    app._relink()
+
+
+@pytest.mark.parametrize("status", ["pending", "done", "error"])
+def test_relink_preserves_all_result_fields_and_never_generates(
+    desktop, tmp_path, monkeypatch, status
+):
+    root, app, path = desktop
+    row = missing_workspace(root, app, tmp_path, status=status)
+    original_path = row.path
+    expected = replace(row, path=str(path.resolve()))
+    monkeypatch.setattr(app, "_start", lambda: pytest.fail("Relink must not generate"))
+    choose_replacement(app, monkeypatch, path)
+    root.update()
+    assert app.rows == {expected.path: expected}
+    assert not app.image_errors
+    assert app.current == expected.path and app.tree.selection() == (expected.path,)
+    assert not app.tree.exists(original_path)
+    assert app.preview_source is not None
+    assert app.preview_source.getpixel((0, 0)) == (0, 0, 255)
+    assert app.editor.get("1.0", "end-1c") == expected.caption
+    assert app.dirty and app.autosave_after is not None
+    assert not app.busy and app.engine is None
+    assert str(app.relink_button["state"]) == "disabled"
+    assert (
+        app.tree.set(expected.path, "state")
+        == {
+            "pending": "Ready",
+            "done": "Edited",
+            "error": "Error",
+        }[status]
+    )
+
+
+def test_relink_keeps_uncommitted_edits_in_recovery_and_manual_session(
+    desktop, tmp_path, monkeypatch
+):
+    root, app, path = desktop
+    row = missing_workspace(root, app, tmp_path)
+    old_path = row.path
+    app.editor.delete("1.0", "end")
+    app.editor.insert("1.0", "Latest edit")
+    choose_replacement(app, monkeypatch, path)
+    root.update()
+    app._autosave_now()
+    recovered = app.recovery.load()
+    assert recovered.results[0].caption == "Latest edit"
+    assert recovered.results[0].generated_caption == "Original AI caption"
+    assert recovered.results[0].path == str(path.resolve())
+    assert recovered.results[0].edited
+    destination = tmp_path / "relinked.lumacaption.json"
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(destination)
+    )
+    assert app._save_session()
+    app._clear()
+    import_file(app, monkeypatch, destination)
+    root.update()
+    assert old_path not in app.rows
+    assert app.rows[str(path.resolve())] == recovered.results[0]
+    assert not app.image_errors and not app.dirty
+
+
+@pytest.mark.parametrize(
+    "kind", ["cancel", "missing", "damaged", "unsupported", "directory", "load"]
+)
+def test_invalid_or_cancelled_relink_preserves_workspace_and_recovery(
+    desktop, tmp_path, monkeypatch, kind
+):
+    from lumacaption.images import ImageInputError
+
+    root, app, path = desktop
+    row = missing_workspace(root, app, tmp_path)
+    original = replace(row)
+    app._mark_dirty()
+    app._autosave_now()
+    recovery = app.recovery.path.read_bytes()
+    app.dirty = False
+    errors = []
+    monkeypatch.setattr(
+        "lumacaption.desktop.messagebox.showerror", lambda *a, **kw: errors.append(a)
+    )
+    if kind == "cancel":
+        candidate = ""
+    elif kind == "load":
+        candidate = path
+
+        def fail(path):
+            raise ImageInputError("Permission denied")
+
+        monkeypatch.setattr("lumacaption.desktop.load_image", fail)
+    else:
+        candidate = tmp_path / ("invalid.txt" if kind == "unsupported" else "invalid.png")
+        if kind == "directory":
+            candidate.mkdir()
+        elif kind in {"damaged", "unsupported"}:
+            candidate.write_text("not an image")
+    choose_replacement(app, monkeypatch, candidate)
+    assert app.rows == {original.path: original}
+    assert app.current == original.path and app.tree.selection() == (original.path,)
+    assert original.path in app.image_errors and not app.dirty
+    assert app.preview_source is None
+    assert app.editor.get("1.0", "end-1c") == original.caption
+    assert app.recovery.path.read_bytes() == recovery
+    assert bool(errors) == (kind != "cancel")
+
+
+@pytest.mark.parametrize("kind", ["exact", "case_slashes", "hardlink"])
+def test_relink_rejects_duplicate_images(desktop, tmp_path, monkeypatch, kind):
+    root, app, path = desktop
+    missing = missing_workspace(root, app, tmp_path)
+    existing = str(path.resolve())
+    if kind == "case_slashes":
+        existing = existing.upper().replace("\\", "/")
+    app.rows[existing] = CaptionResult(existing)
+    app.tree.insert("", "end", iid=existing, values=(path.name, "Ready"))
+    candidate = path
+    if kind == "hardlink":
+        candidate = tmp_path / "alias.png"
+        candidate.hardlink_to(path)
+    errors = []
+    monkeypatch.setattr(
+        "lumacaption.desktop.messagebox.showerror", lambda *a, **kw: errors.append(a)
+    )
+    choose_replacement(app, monkeypatch, candidate)
+    assert list(app.rows) == [missing.path, existing] and app.current == missing.path
+    assert not app.dirty and missing.path in app.image_errors
+    assert errors and "already in" in errors[0][1]
+
+
+def test_relink_keeps_queue_order_and_other_rows(desktop, tmp_path, monkeypatch):
+    root, app, path = desktop
+    target = missing_workspace(root, app, tmp_path)
+    before = CaptionResult(str(tmp_path / "before.png"))
+    after = CaptionResult(str(tmp_path / "after.png"))
+    app._apply_session(Session(results=[before, target, after]))
+    app.tree.selection_set(target.path)
+    root.update()
+    choose_replacement(app, monkeypatch, path)
+    root.update()
+    expected_order = [before.path, str(path.resolve()), after.path]
+    assert list(app.rows) == expected_order
+    assert list(app.tree.get_children()) == expected_order
+    assert app.rows[before.path] is before and app.rows[after.path] is after
+    assert app.current == str(path.resolve())
+
+
+def test_restored_original_path_can_be_relinked_in_place(desktop, tmp_path, monkeypatch):
+    root, app, _ = desktop
+    row = missing_workspace(root, app, tmp_path)
+    original = replace(row)
+    restored = tmp_path / "old folder" / "missing photo.png"
+    restored.parent.mkdir()
+    Image.new("RGB", (20, 10), "green").save(restored)
+    choose_replacement(app, monkeypatch, restored)
+    root.update()
+    assert app.rows[row.path] == original
+    assert list(app.tree.get_children()) == [row.path]
+    assert row.path not in app.image_errors and app.dirty
+
+
+def test_relink_button_tracks_missing_selection_and_busy_state(desktop, tmp_path, monkeypatch):
+    root, app, path = desktop
+    missing = missing_workspace(root, app, tmp_path)
+    assert str(app.relink_button["state"]) == "normal"
+    app.busy = True
+    app._update_controls()
+    assert str(app.relink_button["state"]) == "disabled"
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.askopenfilename",
+        lambda **kw: pytest.fail("No relink dialog while busy or on a healthy row"),
+    )
+    app._relink()
+    app.busy = False
+    app.add_paths([path])
+    app.tree.selection_set(str(path.resolve()))
+    root.update()
+    assert str(app.relink_button["state"]) == "disabled"
+    app._relink()
+    app.tree.selection_set(missing.path)
+    root.update()
+    assert str(app.relink_button["state"]) == "normal"
+    app.tree.selection_remove(missing.path)
+    root.update()
+    assert str(app.relink_button["state"]) == "disabled"
+
+
+def test_image_moved_during_session_becomes_relinkable(desktop, tmp_path, monkeypatch):
+    root, app, path = desktop
+    app.add_paths([path])
+    root.update()
+    original = str(path.resolve())
+    moved = path.rename(tmp_path / "renamed photo.png")
+    app._select()
+    assert original in app.image_errors
+    assert app.tree.set(original, "state") == "Missing"
+    assert str(app.relink_button["state"]) == "normal"
+    choose_replacement(app, monkeypatch, moved)
+    root.update()
+    assert str(moved.resolve()) in app.rows and original not in app.rows
+
+
+def test_reselecting_restored_image_clears_missing_warning(desktop, tmp_path):
+    root, app, _ = desktop
+    row = missing_workspace(root, app, tmp_path)
+    restored = tmp_path / "old folder" / "missing photo.png"
+    restored.parent.mkdir()
+    Image.new("RGB", (20, 10), "green").save(restored)
+    app._select()
+    assert row.path not in app.image_errors and not app.dirty
+    assert app.tree.set(row.path, "state") == "Edited"
+    assert str(app.relink_button["state"]) == "disabled"
+
+
+def test_relinked_pending_row_generates_from_replacement_only_when_requested(
+    desktop, tmp_path, monkeypatch
+):
+    root, app, path = desktop
+    missing_workspace(root, app, tmp_path, status="pending")
+    seen = []
+
+    class Stub:
+        offline = False
+
+        def prepare(self, status):
+            pass
+
+        def caption(self, image, options):
+            seen.append(image.getpixel((0, 0)))
+            return "A blue replacement"
+
+    app.engine = Stub()
+    choose_replacement(app, monkeypatch, path)
+    root.update()
+    assert not seen and str(app.generate_button["state"]) == "normal"
+    app._start()
+    pump_until(root, lambda: not app.busy)
+    assert seen == [(0, 0, 255)]
+    assert app.rows[str(path.resolve())].caption == "A blue replacement"
+    assert app.rows[str(path.resolve())].status == "done"

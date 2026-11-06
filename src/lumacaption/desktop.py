@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ntpath
 import queue
 import threading
 import tkinter as tk
@@ -13,7 +14,7 @@ from PIL import Image, ImageTk
 from .batch import CaptionResult, run_batch
 from .engine import LENGTHS, CaptionEngine, CaptionOptions
 from .exporting import export_results
-from .images import MAX_BATCH, ImageInputError, collect_images, load_image
+from .images import MAX_BATCH, SUPPORTED_SUFFIXES, ImageInputError, collect_images, load_image
 from .recovery import RecoveryStore, default_recovery_directory
 from .sessions import Session, load_session, save_session
 
@@ -142,6 +143,9 @@ class CaptionApp:
         ttk.Label(
             sessions, text="Save your queue, captions, and settings.", style="Muted.TLabel"
         ).pack(side="left", padx=8)
+
+        self.relink_button = ttk.Button(sessions, text="Relink image...", command=self._relink)
+        self.relink_button.pack(side="right")
 
         body = ttk.Frame(self.root, padding=(24, 0, 24, 10))
         body.pack(fill="both", expand=True)
@@ -313,6 +317,7 @@ class CaptionApp:
             self.preview_source.close()
             self.preview_source = None
         if not self.current:
+            self._update_controls()
             return
         row = self.rows[self.current]
         self.filename.configure(text=Path(row.path).name)
@@ -320,9 +325,92 @@ class CaptionApp:
             self.preview_source = load_image(Path(row.path))
             self.preview_source.thumbnail((1400, 1000), Image.Resampling.LANCZOS)
             self._draw_preview()
+            if self.image_errors.pop(row.path, None) is not None:
+                self._refresh_row(row)
         except ImageInputError as exc:
+            self.preview_photo = None
             self.preview.configure(image="", text=str(exc))
+            try:
+                available = Path(row.path).is_file()
+            except OSError:
+                available = False
+            if not available:
+                self.image_errors[row.path] = (
+                    "Image missing or unavailable. Use Relink image to locate it. "
+                    "Saved captions are kept."
+                )
+                self._refresh_row(row)
         self._show_caption()
+        self._update_controls()
+
+    def _relink(self) -> None:
+        if self.busy or self.current not in self.image_errors:
+            return
+        old_path = self.current
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title=f"Locate {Path(old_path).name}",
+            filetypes=[("Images", "*.jpg *.jpeg *.png *.webp *.bmp *.tif *.tiff")],
+        )
+        if not path:
+            return
+        preview = None
+        try:
+            replacement = Path(path).expanduser().resolve()
+            if replacement.suffix.lower() not in SUPPORTED_SUFFIXES or not replacement.is_file():
+                raise ImageInputError("Choose a supported image file.")
+            key = str(replacement)
+            normalized = ntpath.normcase(ntpath.normpath(key))
+            for existing in self.rows:
+                if existing == old_path:
+                    continue
+                duplicate = ntpath.normcase(ntpath.normpath(existing)) == normalized
+                if not duplicate:
+                    try:
+                        duplicate = replacement.samefile(existing)
+                    except OSError:
+                        pass
+                if duplicate:
+                    raise ImageInputError("That image is already in this workspace.")
+            preview = load_image(replacement)
+            preview.thumbnail((1400, 1000), Image.Resampling.LANCZOS)
+        except (OSError, ValueError) as exc:
+            if preview is not None:
+                preview.close()
+            messagebox.showerror("Could not relink image", str(exc), parent=self.root)
+            return
+
+        # Validate first; then replace the path in place without touching captions,
+        # generation status, timing, or provenance. No model work starts here.
+        self._save_edit()
+        row = self.rows[old_path]
+        if key != old_path:
+            self.tree.insert("", self.tree.index(old_path), iid=key)
+            self.current = None
+            self.tree.delete(old_path)
+            self.rows = {
+                key if existing == old_path else existing: result
+                for existing, result in self.rows.items()
+            }
+        row.path = key
+        self.image_errors.pop(old_path, None)
+        self.current = key
+        self._refresh_row(row)
+        self.tree.selection_set(key)
+        self.tree.focus(key)
+        self.tree.see(key)
+        if self.preview_source is not None:
+            self.preview_source.close()
+        self.preview_source = preview
+        self.filename.configure(text=replacement.name)
+        self._draw_preview()
+        self._show_caption()
+        self._mark_dirty()
+        self._update_controls()
+        self.status.set(
+            f"Relinked {replacement.name}. Captions kept; no generation started. "
+            "Review the caption against this image."
+        )
 
     def _draw_preview(self) -> None:
         if self.preview_source is None:
@@ -772,6 +860,9 @@ class CaptionApp:
             self.recursive_check,
         ):
             widget.configure(state="disabled" if self.busy else "normal")
+        self.relink_button.configure(
+            state="normal" if not self.busy and self.current in self.image_errors else "disabled"
+        )
         self.length_box.configure(state="disabled" if self.busy else "readonly")
         self.generate_button.configure(state="normal" if pending and not self.busy else "disabled")
         self.retry_button.configure(state="normal" if errors and not self.busy else "disabled")

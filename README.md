@@ -13,6 +13,7 @@ LumaCaption's application code is written from scratch. Its AI is the pretrained
 - Edit captions, restore the original AI text, and copy to the clipboard.
 - Save and reopen a session with its queue, edited captions, and settings.
 - Automatically keep a local recovery copy and offer to restore it after an interruption.
+- Relink moved images while preserving their captions and edits.
 - Export CSV for spreadsheets or JSON with original captions and model provenance.
 - Continue past damaged files, then retry errors.
 - Work offline after the model is downloaded. Images never go to a captioning API.
@@ -74,7 +75,7 @@ An existing CLI export is protected unless you pass `--force`. Exit codes: 0 suc
 
 Sessions default to workspace.lumacaption.json. Opening, clearing, or closing an idle workspace prompts to save unsaved changes. Cancelling a save or encountering a save error keeps the current workspace. Save/Open controls are disabled during generation; cancel the batch and wait for it to finish before saving.
 
-Sessions store image paths, not copies of your photos. Missing images appear as red **Missing** rows, with their saved captions preserved for editing, copying, and export. Restore the files to their original paths and reopen the session to use them again. Opening a session never starts generation automatically. See the [session format and behavior](docs/SESSIONS.md).
+Sessions store image paths, not copies of your photos. Missing images appear as red **Missing** rows, with their saved captions preserved for editing, copying, and export. Select a missing row and use **Relink image...** to locate its file. The app validates the replacement before changing the path, keeps the caption, and updates the recovery copy. Review the caption against the replacement image. Relinking is disabled during generation. Opening a session never starts generation automatically. See the [session format and behavior](docs/SESSIONS.md).
 
 Export files contain results; use a session file to restore the queue and settings. Exporting does not clear the unsaved-workspace prompt. The desktop keeps an automatic recovery copy about one second after changes stop, and snapshots pending work before generation. After an interruption, reopening offers to restore the queue, edits, and settings without starting generation.
 
@@ -111,7 +112,7 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 129 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 148 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, or GPU acceleration.
 

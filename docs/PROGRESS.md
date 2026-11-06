@@ -89,3 +89,15 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Real-model offline regression passed: identical captions, zero network attempts, unchanged source hashes, matching desktop-worker output, CSV/JSON checks, 48.959 seconds total. Smoke tooling disables recovery to avoid touching user data.
 - Source, tests, and docs only; tutorial originals, images, weights, recovery data, and reports remain excluded. Manual visual/accessibility acceptance is still unverified.
 - Next: LC04, relink moved or missing images.
+
+## 2026-11-05 - LC04: relink moved or missing images
+
+- Added a selection-aware Relink image dialog for missing rows, disabled while a batch runs. Replacement files must pass supported-type and existing image validation before any path change.
+- Preserve captions, edits, original AI text, status/errors, timing, provenance, queue order, and selection. Refresh the preview, mark the workspace unsaved, and schedule recovery without starting generation.
+- Reject duplicate normalized Windows paths and existing file aliases. Cancelled dialogs and invalid/unavailable/damaged replacements preserve the previous row and recovery copy.
+- Detect images moved while the app is open when their row is selected; reselecting a restored file clears its missing warning.
+- Added 19 desktop cases for field preservation, cancelled/failed validation, duplicates/hard links, order/selection, restored paths, busy controls, moved images, recovery/manual-save round trips, and explicit generation using the replacement.
+- Validation: 148 tests passed, including 61 desktop cases; Ruff lint/format and whitespace checks passed.
+- Real cached-model regression passed with identical captions, zero network attempts, unchanged source hashes, matching desktop-worker output, and CSV/JSON checks in 44.653 seconds. Original images and the report remain local.
+- Updated the compact plan and usage documentation. Tutorial originals, datasets, photos, weights, environments, recovery files, and reports remain excluded from publication.
+- Next: LC05, model and startup diagnostics.
