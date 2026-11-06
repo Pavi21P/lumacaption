@@ -14,6 +14,7 @@ from .batch import CaptionResult, run_batch
 from .engine import LENGTHS, CaptionEngine, CaptionOptions
 from .exporting import export_results
 from .images import MAX_BATCH, ImageInputError, collect_images, load_image
+from .recovery import RecoveryStore, default_recovery_directory
 from .sessions import Session, load_session, save_session
 
 BG = "#f3f5f7"
@@ -21,10 +22,18 @@ INK = "#152a36"
 MUTED = "#576b78"
 ACCENT = "#087f75"
 PANEL = "#ffffff"
+AUTOSAVE_DELAY_MS = 1000
 
 
 class CaptionApp:
-    def __init__(self, root: tk.Tk, *, offline: bool = False) -> None:
+    def __init__(
+        self,
+        root: tk.Tk,
+        *,
+        offline: bool = False,
+        recovery_dir: Path | None = None,
+        autosave: bool = True,
+    ) -> None:
         self.root = root
         self.rows: dict[str, CaptionResult] = {}
         self.current: str | None = None
@@ -38,6 +47,9 @@ class CaptionApp:
         self.session_path: Path | None = None
         self.image_errors: dict[str, str] = {}
         self.beams = 3
+        self.recovery: RecoveryStore | None = None
+        self.autosave_after: str | None = None
+        self.autosave_status = tk.StringVar(value="Automatic recovery is off.")
         self.closed = False
         self.batch_finished = 0
         self.batch_total = 0
@@ -50,6 +62,8 @@ class CaptionApp:
         self._build()
         for variable in (self.length, self.offline, self.recursive):
             variable.trace_add("write", self._settings_changed)
+        if autosave:
+            self._initialize_recovery(recovery_dir or default_recovery_directory())
         self.root.after(100, self._poll)
 
     def _build(self) -> None:
@@ -234,6 +248,7 @@ class CaptionApp:
         self.editor.pack(fill="x")
         self.editor.bind("<FocusOut>", lambda _: self._save_edit())
         self.editor.bind("<KeyRelease>", lambda _: self._save_edit())
+        self.editor.bind("<<Modified>>", self._editor_modified)
         caption_actions = ttk.Frame(right, style="Card.TFrame")
         caption_actions.pack(fill="x", pady=(10, 0))
         ttk.Button(caption_actions, text="Copy caption", command=self._copy).pack(side="left")
@@ -252,6 +267,9 @@ class CaptionApp:
         ttk.Label(footer, textvariable=self.status, style="Muted.TLabel", wraplength=1060).pack(
             anchor="w"
         )
+        ttk.Label(
+            footer, textvariable=self.autosave_status, style="Muted.TLabel", wraplength=1060
+        ).pack(anchor="w", pady=(3, 0))
         self._update_controls()
 
     def add_paths(self, paths: list[Path]) -> None:
@@ -265,7 +283,7 @@ class CaptionApp:
                 self.rows[key] = CaptionResult(path=key)
                 self.tree.insert("", "end", iid=key, values=(path.name, "Ready"))
             if new:
-                self.dirty = True
+                self._mark_dirty()
             if not self.tree.selection() and self.rows:
                 self.tree.selection_set(next(iter(self.rows)))
             self.status.set(f"Added {len(new)} image(s). Select Generate captions when ready.")
@@ -333,7 +351,13 @@ class CaptionApp:
                 )
             )
         self.editor.edit_reset()
+        self.editor.edit_modified(False)
         self.editor.configure(state="normal" if row and row.status == "done" else "disabled")
+
+    def _editor_modified(self, _event=None) -> None:
+        if self.editor.edit_modified():
+            self.editor.edit_modified(False)
+            self._save_edit()
 
     def _save_edit(self) -> None:
         row = self.rows.get(self.current)
@@ -342,7 +366,7 @@ class CaptionApp:
             if row.caption != text:
                 row.caption = text
                 row.edited = text != row.generated_caption
-                self.dirty = True
+                self._mark_dirty()
                 self._refresh_row(row)
 
     def _copy(self) -> None:
@@ -358,7 +382,7 @@ class CaptionApp:
         if row and row.status == "done":
             row.caption = row.generated_caption
             row.edited = False
-            self.dirty = True
+            self._mark_dirty()
             self._refresh_row(row)
             self._show_caption()
 
@@ -381,6 +405,8 @@ class CaptionApp:
         self.batch_total = len(paths)
         self.batch_error = False
         self.progress.configure(value=0, maximum=len(paths))
+        self._mark_dirty()
+        self._autosave_now()
         self.status.set("Preparing captioning model...")
         self._update_controls()
         threading.Thread(
@@ -422,7 +448,7 @@ class CaptionApp:
                     )
                     self.batch_finished += 1
                     self.progress.configure(value=self.batch_finished)
-                    self.dirty = True
+                    self._mark_dirty()
                     if self.current == payload.path:
                         self._show_caption()
                     self._update_controls()
@@ -458,7 +484,7 @@ class CaptionApp:
         self._save_edit()
         for row in self.rows.values():
             if row.status == "error" and row.path not in self.image_errors:
-                self.dirty = True
+                self._mark_dirty()
                 row.status = "pending"
                 row.error = ""
                 self.tree.item(row.path, values=(Path(row.path).name, "Ready"), tags=())
@@ -485,8 +511,92 @@ class CaptionApp:
             except (OSError, ValueError) as exc:
                 messagebox.showerror("Export failed", str(exc), parent=self.root)
 
-    def _settings_changed(self, *_args) -> None:
+    def _snapshot(self) -> Session:
+        # Called only on the Tk thread; persistence finishes before UI state can change.
+        return Session(
+            results=list(self.rows.values()),
+            options=CaptionOptions(length=self.length.get(), beams=self.beams),
+            offline=self.offline.get(),
+            recursive=self.recursive.get(),
+        )
+
+    def _initialize_recovery(self, directory: Path) -> None:
+        try:
+            self.recovery = RecoveryStore(directory)
+            session = self.recovery.load()
+            self.autosave_status.set("Automatic recovery ready.")
+            if session is not None:
+                recover = messagebox.askyesno(
+                    "Recover unsaved workspace?",
+                    "An unsaved workspace was found. Restore its queue, captions, and settings? "
+                    "Generation will stay stopped. No discards this recovery copy.",
+                    parent=self.root,
+                )
+                if recover:
+                    self._apply_session(session)
+                    self._mark_dirty()
+                    self.status.set(
+                        "Workspace recovered. Review it and use Save session to keep it."
+                    )
+                else:
+                    self.recovery.discard()
+        except (OSError, ValueError) as exc:
+            # Preserve unreadable recovery files for manual inspection.
+            self._release_recovery()
+            self.autosave_status.set(f"Recovery unavailable: {exc} Use Save session.")
+
+    def _mark_dirty(self) -> None:
         self.dirty = True
+        if self.recovery is not None and not self.closed:
+            self._cancel_autosave()
+            self.autosave_after = self.root.after(AUTOSAVE_DELAY_MS, self._autosave_now)
+            self.autosave_status.set("Recovery copy pending...")
+
+    def _cancel_autosave(self) -> None:
+        if self.autosave_after is not None:
+            self.root.after_cancel(self.autosave_after)
+            self.autosave_after = None
+
+    def _autosave_now(self) -> None:
+        self._cancel_autosave()
+        if self.closed or self.recovery is None:
+            return
+        self._save_edit()
+        self._cancel_autosave()
+        if not self.dirty:
+            return
+        try:
+            self.recovery.save(self._snapshot())
+            self.autosave_status.set("Recovery copy saved locally. Use Save session to keep it.")
+        except (OSError, ValueError) as exc:
+            self.autosave_status.set(f"Recovery save failed: {exc} Use Save session.")
+        # Autosave never clears dirty: explicit discard/save decisions still matter.
+
+    def _discard_recovery(self) -> bool:
+        self._cancel_autosave()
+        if self.recovery is not None:
+            try:
+                self.recovery.discard()
+            except OSError as exc:
+                self.autosave_status.set(f"Could not remove recovery copy: {exc}")
+                messagebox.showerror(
+                    "Recovery cleanup failed",
+                    "The previous recovery copy could not be removed. "
+                    "Your workspace is kept open. Check storage permissions and try again.",
+                    parent=self.root,
+                )
+                return False
+            self.autosave_status.set("Automatic recovery ready.")
+        return True
+
+    def _release_recovery(self) -> None:
+        self._cancel_autosave()
+        if self.recovery is not None:
+            self.recovery.close()
+            self.recovery = None
+
+    def _settings_changed(self, *_args) -> None:
+        self._mark_dirty()
 
     def _refresh_row(self, row: CaptionResult) -> None:
         state = (
@@ -520,18 +630,15 @@ class CaptionApp:
         if not path:
             return False
         try:
-            session = Session(
-                results=list(self.rows.values()),
-                options=CaptionOptions(length=self.length.get(), beams=self.beams),
-                offline=self.offline.get(),
-                recursive=self.recursive.get(),
-            )
-            save_session(session, Path(path), overwrite=True)
+            if self.recovery and Path(path).resolve() == self.recovery.path.resolve():
+                raise ValueError("Choose a location outside the automatic recovery file.")
+            save_session(self._snapshot(), Path(path), overwrite=True)
         except (OSError, ValueError) as exc:
             messagebox.showerror("Could not save session", str(exc), parent=self.root)
             return False
         self.session_path = Path(path)
         self.dirty = False
+        self._discard_recovery()
         self.status.set(f"Session saved to {self.session_path.name}.")
         return True
 
@@ -573,17 +680,27 @@ class CaptionApp:
         try:
             if had_changes and not self.dirty:
                 session = load_session(Path(path))
-            missing = {}
-            for row in session.results:
-                try:
-                    available = Path(row.path).is_file()
-                except OSError:
-                    available = False
-                if not available:
-                    missing[row.path] = "Image missing or unavailable. Saved captions are kept."
         except (OSError, ValueError) as exc:
             messagebox.showerror("Could not open session", str(exc), parent=self.root)
             return
+        if not self._discard_recovery():
+            return
+        self._apply_session(session, Path(path))
+        self.status.set(
+            f"Opened {self.session_path.name}: {len(self.rows)} image(s), "
+            f"{len(self.image_errors)} missing or unavailable. "
+            "Generation starts only when requested."
+        )
+
+    def _apply_session(self, session: Session, path: Path | None = None) -> None:
+        missing = {}
+        for row in session.results:
+            try:
+                available = Path(row.path).is_file()
+            except OSError:
+                available = False
+            if not available:
+                missing[row.path] = "Image missing or unavailable. Saved captions are kept."
         self._reset_workspace()
         self.rows = {row.path: row for row in session.results}
         self.image_errors = missing
@@ -594,18 +711,18 @@ class CaptionApp:
         for row in session.results:
             self.tree.insert("", "end", iid=row.path)
             self._refresh_row(row)
-        self.session_path = Path(path)
+        self.session_path = path
         self.dirty = False
         if self.rows:
             self.tree.selection_set(next(iter(self.rows)))
             self._select()
-        self.status.set(
-            f"Opened {self.session_path.name}: {len(self.rows)} image(s), "
-            f"{len(missing)} missing or unavailable. Generation starts only when requested."
-        )
+        self._cancel_autosave()
+        if self.recovery is not None:
+            self.autosave_status.set("Automatic recovery ready.")
         self._update_controls()
 
     def _reset_workspace(self) -> None:
+        self._cancel_autosave()
         # Clear the selection before replacing rows so queued selection events
         # cannot apply the old editor contents to a restored caption.
         self.current = None
@@ -627,6 +744,8 @@ class CaptionApp:
 
     def _clear(self) -> None:
         if self.busy or not self._confirm_replace():
+            return
+        if not self._discard_recovery():
             return
         self._reset_workspace()
         self.status.set("Workspace cleared. Your original images are unchanged.")
@@ -677,6 +796,9 @@ class CaptionApp:
                 return
         elif not self._confirm_replace():
             return
+        if not self._discard_recovery():
+            return
+        self._release_recovery()
         self.cancel_event.set()
         self.closed = True
         if self.preview_source:

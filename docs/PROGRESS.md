@@ -77,3 +77,15 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Because restored generation options now reach the worker, reran the real cached-model offline smoke: zero network attempts, unchanged source hashes, matching desktop-worker captions, successful CSV/JSON export checks, 28.904 seconds total.
 - Published source/docs only; original tutorial files, photos, weights, environments, sessions, and local reports remain excluded. No manual visual/accessibility acceptance is claimed.
 - Next: LC03 local autosave and recovery.
+
+## 2026-11-05 - LC03: local autosave and startup recovery
+
+- Added one-second debounced atomic snapshots in Windows local app data, with a pre-generation snapshot of pending work. Caption edits, pasted text, settings, retries, and completed results trigger recovery updates.
+- Added startup restore/discard choice. Recovery preserves captions/provenance/settings, leaves interrupted rows pending, and never starts the model automatically.
+- Added OS-lock ownership so another app window cannot overwrite the active recovery copy. Abrupt-process-exit tests confirm the lock releases and the saved copy survives.
+- Kept manual session saves distinct from recovery. Explicit save/discard actions clean the recovery copy; cancellation, invalid imports, and failed saves preserve it. Failed writes preserve the last good copy; corrupt startup files are left intact with recovery disabled and a visible message.
+- Added 28 tests: 20 desktop recovery cases and 8 recovery-storage cases. Full suite: 129 passed; Ruff lint/format and whitespace checks passed.
+- Repeated independent Tk creation exposed intermittent fixture setup errors. Changed tests to one Tcl runtime and a fresh window per case; the full suite then passed without skips.
+- Real-model offline regression passed: identical captions, zero network attempts, unchanged source hashes, matching desktop-worker output, CSV/JSON checks, 48.959 seconds total. Smoke tooling disables recovery to avoid touching user data.
+- Source, tests, and docs only; tutorial originals, images, weights, recovery data, and reports remain excluded. Manual visual/accessibility acceptance is still unverified.
+- Next: LC04, relink moved or missing images.

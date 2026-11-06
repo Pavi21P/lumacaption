@@ -12,11 +12,21 @@ from lumacaption.engine import CaptionOptions
 from lumacaption.sessions import Session, load_session, save_session
 
 
-@pytest.fixture
-def desktop(tmp_path, monkeypatch):
+@pytest.fixture(scope="session")
+def tk_runtime():
+    # One Tcl interpreter with an isolated window per test, matching the app's
+    # single-interpreter runtime and avoiding repeated Windows Tk reloads.
     root = tk.Tk()
     root.withdraw()
-    app = CaptionApp(root)
+    yield root
+    root.destroy()
+
+
+@pytest.fixture
+def desktop(tmp_path, monkeypatch, tk_runtime):
+    root = tk.Toplevel(tk_runtime)
+    root.withdraw()
+    app = CaptionApp(root, recovery_dir=tmp_path / "recovery")
     monkeypatch.setattr("lumacaption.desktop.messagebox.showerror", lambda *a, **k: None)
     monkeypatch.setattr("lumacaption.desktop.messagebox.askyesno", lambda *a, **k: True)
     monkeypatch.setattr("lumacaption.desktop.messagebox.askyesnocancel", lambda *a, **k: False)
@@ -24,7 +34,8 @@ def desktop(tmp_path, monkeypatch):
     Image.new("RGB", (40, 20), "blue").save(path)
     yield root, app, path
     app.closed = True
-    # Cancel scheduled callbacks before destroying the Tcl interpreter.
+    app._release_recovery()
+    # Cancel scheduled callbacks before destroying this test's window.
     for callback in root.tk.call("after", "info"):
         root.after_cancel(callback)
     root.destroy()
@@ -375,3 +386,289 @@ def test_cancel_open_dialog_leaves_workspace(desktop, monkeypatch):
     monkeypatch.setattr("lumacaption.desktop.filedialog.askopenfilename", lambda **kw: "")
     app._open_session()
     assert list(app.rows) == [str(path.resolve())] and app.dirty
+
+
+def test_autosave_debounces_queue_settings_and_pasted_text(desktop, monkeypatch):
+    root, app, path = desktop
+    monkeypatch.setattr("lumacaption.desktop.AUTOSAVE_DELAY_MS", 60)
+    app.add_paths([path])
+    root.update()
+    row = app.rows[str(path.resolve())]
+    row.status = "done"
+    row.caption = row.generated_caption = "Generated"
+    app._show_caption()
+    writes = []
+    save = app.recovery.save
+
+    def recording_save(session):
+        writes.append(session)
+        save(session)
+
+    monkeypatch.setattr(app.recovery, "save", recording_save)
+    app.length.set("Long")
+    app.offline.set(True)
+    app.recursive.set(True)
+    app.editor.delete("1.0", "end")
+    app.editor.insert("1.0", "Pasted edit")
+    # A real <<Modified>> event captures edits even without key release/focus change.
+    root.update()
+    assert not app.recovery.path.exists()
+    pump_until(root, lambda: app.recovery.path.exists())
+    assert len(writes) == 1
+    saved = app.recovery.load()
+    assert saved.results[0].caption == "Pasted edit"
+    assert saved.results[0].generated_caption == "Generated"
+    assert saved.results[0].edited
+    assert saved.offline and saved.recursive and saved.options.length == "Long"
+    assert app.dirty
+
+
+def test_startup_recovers_completed_and_interrupted_rows_without_inference(
+    desktop, tmp_path, monkeypatch
+):
+    from lumacaption.recovery import RecoveryStore
+
+    root, app, path = desktop
+    app._release_recovery()
+    directory = tmp_path / "interrupted"
+    finished = CaptionResult(
+        str(path.resolve()),
+        caption="Edited",
+        generated_caption="Original",
+        edited=True,
+        status="done",
+    )
+    pending = CaptionResult(str(tmp_path / "missing.png"))
+    store = RecoveryStore(directory)
+    store.save(
+        Session(results=[finished, pending], options=CaptionOptions("Long", 5), offline=True)
+    )
+    store.close()
+    monkeypatch.setattr(app, "_start", lambda: pytest.fail("Recovery must not start generation"))
+    app._initialize_recovery(directory)
+    root.update()
+    assert app.rows[finished.path] == finished
+    assert app.rows[pending.path].status == "pending"
+    assert pending.path in app.image_errors
+    assert app.beams == 5 and app.length.get() == "Long" and app.offline.get()
+    assert app.dirty and app.session_path is None
+    assert not app.busy and app.engine is None
+    assert app.editor.get("1.0", "end-1c") == "Edited"
+
+
+def test_declining_recovery_removes_only_the_recovery_copy(desktop, tmp_path, monkeypatch):
+    from lumacaption.recovery import RecoveryStore
+
+    _, app, path = desktop
+    app._release_recovery()
+    store = RecoveryStore(tmp_path / "declined")
+    store.save(Session(results=[CaptionResult(str(path.resolve()))]))
+    store.close()
+    monkeypatch.setattr("lumacaption.desktop.messagebox.askyesno", lambda *a, **kw: False)
+    app._initialize_recovery(tmp_path / "declined")
+    assert not app.rows and not app.dirty
+    assert app.recovery.load() is None
+    assert path.exists()
+
+
+def test_corrupt_startup_copy_is_preserved_and_autosave_disabled(desktop, tmp_path):
+    _, app, path = desktop
+    app._release_recovery()
+    directory = tmp_path / "corrupt"
+    directory.mkdir()
+    damaged = directory / "autosave.lumacaption.json"
+    damaged.write_text("bad json")
+    app._initialize_recovery(directory)
+    app.add_paths([path])
+    app._autosave_now()
+    assert damaged.read_text() == "bad json"
+    assert app.recovery is None and app.dirty
+    assert "unavailable" in app.autosave_status.get().lower()
+
+
+def test_second_window_preserves_first_windows_recovery(desktop):
+    from lumacaption.recovery import RecoveryStore
+
+    _, app, path = desktop
+    app._release_recovery()
+    directory = path.parent / "other-window"
+    first = RecoveryStore(directory)
+    first.save(Session(offline=True))
+    try:
+        app._initialize_recovery(directory)
+        app.add_paths([path])
+        app._autosave_now()
+        assert app.recovery is None and first.load().offline
+        assert "another window" in app.autosave_status.get()
+    finally:
+        first.close()
+
+
+def test_autosave_failure_keeps_dirty_previous_copy_and_allows_retry(desktop, monkeypatch):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    original = app.recovery.path.read_bytes()
+    save = app.recovery.save
+
+    def fail(session):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(app.recovery, "save", fail)
+    app.offline.set(True)
+    app._autosave_now()
+    assert app.recovery.path.read_bytes() == original and app.dirty
+    assert "disk full" in app.autosave_status.get()
+    monkeypatch.setattr(app.recovery, "save", save)
+    app._mark_dirty()
+    app._autosave_now()
+    assert app.recovery.load().offline and app.dirty
+
+
+@pytest.mark.parametrize("action", ["clear", "save", "open"])
+def test_explicit_save_or_replace_cleans_recovery_and_cancels_timer(
+    desktop, tmp_path, monkeypatch, action
+):
+    root, app, path = desktop
+    app.add_paths([path])
+    root.update()
+    app._autosave_now()
+    recovery_path = app.recovery.path
+    app.offline.set(True)
+    if action == "clear":
+        app._clear()
+    elif action == "save":
+        destination = tmp_path / "manual.json"
+        monkeypatch.setattr(
+            "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(destination)
+        )
+        assert app._save_session()
+        assert load_session(destination).offline
+    else:
+        destination = tmp_path / "empty.json"
+        save_session(Session(), destination)
+        import_file(app, monkeypatch, destination)
+    root.update()
+    assert not recovery_path.exists() and app.autosave_after is None
+    assert not app.dirty
+
+
+@pytest.mark.parametrize("action", ["clear", "open", "close"])
+def test_cancel_replacement_keeps_recovery(desktop, tmp_path, monkeypatch, action):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    original = app.recovery.path.read_bytes()
+    monkeypatch.setattr("lumacaption.desktop.messagebox.askyesnocancel", lambda *a, **kw: None)
+    if action == "open":
+        destination = tmp_path / "empty.json"
+        save_session(Session(), destination)
+        import_file(app, monkeypatch, destination)
+    else:
+        getattr(app, "_" + action)()
+    assert app.recovery.path.read_bytes() == original and app.dirty and not app.closed
+
+
+def test_batch_pending_and_completed_results_are_recoverable(desktop, monkeypatch):
+    root, app, path = desktop
+    app.add_paths([path])
+    root.update()
+    # Hold thread creation without changing the real UI/event processing.
+    monkeypatch.setattr("lumacaption.desktop.threading.Thread.start", lambda self: None)
+    app._start()
+    assert app.recovery.load().results[0].status == "pending"
+    app.events.put(("result", CaptionResult(str(path.resolve()), caption="Done", status="done")))
+    app.events.put(("finished", None))
+    app._poll()
+    app._autosave_now()
+    assert app.recovery.load().results[0].caption == "Done"
+    assert not app.busy and app.dirty
+
+
+def test_cleanup_failure_stops_clear_without_losing_workspace(desktop, monkeypatch):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+
+    def fail():
+        raise PermissionError("locked")
+
+    monkeypatch.setattr(app.recovery, "discard", fail)
+    app._clear()
+    assert str(path.resolve()) in app.rows
+    assert app.recovery.path.exists() and app.dirty
+
+
+def test_manual_save_cannot_target_the_internal_recovery_file(desktop, monkeypatch):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    original = app.recovery.path.read_bytes()
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(app.recovery.path)
+    )
+    assert not app._save_session()
+    assert app.recovery.path.read_bytes() == original and app.dirty
+
+
+@pytest.mark.parametrize("busy", [False, True])
+def test_confirmed_close_discards_recovery_and_releases_lock(desktop, monkeypatch, busy):
+    from lumacaption.recovery import RecoveryStore
+
+    root, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    directory = app.recovery.path.parent
+    app.busy = busy
+    with monkeypatch.context() as context:
+        context.setattr(root, "destroy", lambda: None)
+        app._close()
+    assert app.closed and app.recovery is None and app.autosave_after is None
+    reopened = RecoveryStore(directory)
+    try:
+        assert reopened.load() is None
+    finally:
+        reopened.close()
+
+
+def test_storage_unavailable_still_allows_manual_session_save(desktop, tmp_path, monkeypatch):
+    _, app, path = desktop
+    app._release_recovery()
+
+    def unavailable(directory):
+        raise PermissionError("Access denied")
+
+    monkeypatch.setattr("lumacaption.desktop.RecoveryStore", unavailable)
+    app._initialize_recovery(tmp_path / "blocked")
+    app.add_paths([path])
+    destination = tmp_path / "manual.json"
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename", lambda **kw: str(destination)
+    )
+    assert app._save_session()
+    assert load_session(destination).results[0].path == str(path.resolve())
+    assert app.recovery is None
+
+
+def test_bad_import_preserves_recovery_copy(desktop, tmp_path, monkeypatch):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    original = app.recovery.path.read_bytes()
+    broken = tmp_path / "broken.json"
+    broken.write_text("bad")
+    import_file(app, monkeypatch, broken)
+    assert app.recovery.path.read_bytes() == original and app.dirty
+
+
+def test_failed_manual_save_keeps_recovery_copy(desktop, tmp_path, monkeypatch):
+    _, app, path = desktop
+    app.add_paths([path])
+    app._autosave_now()
+    original = app.recovery.path.read_bytes()
+    monkeypatch.setattr(
+        "lumacaption.desktop.filedialog.asksaveasfilename",
+        lambda **kw: str(tmp_path / "nonexistent" / "manual.json"),
+    )
+    assert not app._save_session()
+    assert app.recovery.path.read_bytes() == original and app.dirty

@@ -1,6 +1,6 @@
 # Saved-session storage (schema 1)
 
-LC01 provides the storage API; LC02 adds desktop Save/Open controls.
+LC01 provides the storage API; LC02 adds desktop Save/Open controls; LC03 adds local recovery.
 
 ## Desktop behavior
 
@@ -10,7 +10,21 @@ Queue additions, generated results, caption edits, retries, and setting changes 
 
 Save/Open and Clear are disabled while generation runs. Cancel the batch and wait for the current operation to finish before saving. Restored pending rows stay pending until Generate is clicked. Caption length, beam count, offline mode, and recursive-folder settings are preserved; the desktop does not expose a beam-count editor.
 
-Missing or unavailable paths receive a red Missing display state and a preview warning. Their stored result status, captions, edits, timing, and provenance stay intact. Completed captions remain editable and exportable even without the image. Missing rows are excluded from generation and retry so retained text cannot be overwritten by another missing-file failure. Restore the image at its saved path and reopen the session to refresh availability. Relinking is LC04; autosave/recovery is LC03.
+Missing or unavailable paths receive a red Missing display state and a preview warning. Their stored result status, captions, edits, timing, and provenance stay intact. Completed captions remain editable and exportable even without the image. Missing rows are excluded from generation and retry so retained text cannot be overwritten by another missing-file failure. Restore the image at its saved path and reopen the session to refresh availability. Relinking is LC04.
+
+## Autosave and recovery
+
+The desktop writes an atomic recovery snapshot after one second without further changes. Queue additions, edits (including paste/undo), options, retry state, and completed results trigger snapshots. Before generation begins, pending work is saved immediately. Snapshots use the same schema and size limits as manual sessions; image files and weights are not copied.
+
+Storage is %LOCALAPPDATA%\LumaCaption\recovery\autosave.lumacaption.json. If LOCALAPPDATA is absent or relative, the fallback is AppData/Local/LumaCaption/recovery under the user's home directory. The working directory is never the default. This data contains private local paths and captions and stays outside the repository.
+
+At startup, choose Yes to recover or No to discard the recovery copy. Recovered edits/settings and completed/error rows are preserved; interrupted work stays pending and generation does not start itself. Recovery leaves the workspace unsaved and does not restore the old manual save destination. Use Save session to choose a permanent destination.
+
+Autosave does not clear the dirty flag. Successful manual saves and explicitly confirmed Open/Clear/Close actions remove the old recovery copy and cancel its timer. Cancelled actions, failed saves, and invalid imports retain recovery. Closing during a running batch still requires explicit confirmation to discard unsaved work. If cleanup fails, replacing/closing the workspace stops and reports the error.
+
+One OS file lock protects the recovery store for the lifetime of its owning window. A second window still supports manual sessions but disables its own automatic recovery. The lock is released on normal close or process exit; the persistent recovery.lock file is intentionally retained. Snapshots and Tk state capture both run on the UI thread, avoiding stale background writes after a save or workspace replacement.
+
+The footer shows pending/saved/error status. Write failures preserve the previous valid copy and retry after another change. Unreadable startup copies remain untouched and disable autosave for that window; move the damaged autosave file aside in the recovery directory before restarting to re-enable it. Manual saves remain available. The last debounce interval, failed writes, and abrupt power loss can still lose recent changes; recovery is not a versioned backup.
 
 ## API
 

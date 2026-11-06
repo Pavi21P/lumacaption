@@ -1,37 +1,38 @@
 # LumaCaption status
 
-Updated: 2026-11-04 (America/Chicago)
+Updated: 2026-11-05 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC02 - desktop Save/Open sessions complete
-Next task: LC03 - local autosave and recovery
+Current checkpoint: LC03 - local autosave and startup recovery complete
+Next task: LC04 - relink moved or missing images
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
 
 ## Verified baseline
 
-- 101 tests passed, including 22 desktop tests; Ruff lint/format passed.
-- Save/Open restores queue, edits, settings, and provenance without starting inference.
-- Save/discard/cancel prompts protect unsaved work; export does not save a session.
-- Missing-image warnings preserve stored rows/captions and exclude them from generation.
+- 129 tests passed (42 desktop, 8 recovery-store, 79 existing other tests).
+- Ruff lint/format passed for 15 Python files.
+- One-second debounced recovery plus immediate pre-generation pending snapshot.
+- Startup recovery restores edits/settings; generation stays stopped.
+- Atomic writes, process-exit recovery, exclusive ownership, and cleanup verified.
 - Real cached-model smoke passed: zero network attempts, unchanged source files,
-  matching desktop-worker captions, and CSV/JSON exports; total 28.904 seconds.
-- Hosted CI status is checked after each push; see GitHub for the latest checkpoint.
+  matching desktop-worker captions, and CSV/JSON exports; total 48.959 seconds.
+- Hosted CI is checked once after push; see GitHub for current status.
 - Reuse .venv and .cache/models; .local reports remain ignored.
 
-## LC03 starting points
+## LC04 starting points
 
-- Storage contract/API: docs/SESSIONS.md and src/lumacaption/sessions.py.
-- Desktop state/dialogs and dirty tracking: src/lumacaption/desktop.py.
-- Tests: tests/test_desktop.py and tests/test_sessions.py.
-- Add debounced autosave outside Git and offer recovery at startup.
-- Capture Tk state on the UI thread; do not race generation/results or manual saves.
-- Recovered jobs must remain pending until the user starts generation.
-- Preserve existing save/discard/cancel and failed-import behavior.
-- Relinking missing paths remains LC04.
+- Desktop missing-image display: image_errors, _apply_session, _refresh_row.
+- Add a relink action without losing caption edits or model provenance.
+- Validate the replacement image before changing the existing row/path/tree ID.
+- Handle duplicate paths, cancellation, unavailable files, and invalid images.
+- Use _mark_dirty() after successful relinks so autosave captures the change.
+- Keep missing-path recovery/export behavior covered by desktop tests.
+- RecoveryStore in recovery.py owns the local store; tests use temporary directories.
+- Desktop tests share one Tcl runtime with a fresh window per test.
 
 ## Outstanding evidence
 
 Fresh-machine installation, manual visual/accessibility acceptance, comparative benchmarks,
-and GPU execution remain unverified. These do not block LC03.
+and GPU execution remain unverified. These do not block LC04.

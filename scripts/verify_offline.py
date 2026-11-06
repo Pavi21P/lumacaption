@@ -83,7 +83,7 @@ def main() -> None:
 
             root = tk.Tk()
             root.withdraw()
-            app = CaptionApp(root, offline=True)
+            app = CaptionApp(root, offline=True, autosave=False)
             app.engine = engine
             errors: list[str] = []
             try:
