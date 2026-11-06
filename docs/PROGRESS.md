@@ -112,3 +112,12 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Shared-settings regression: real offline captions matched prior output; zero network attempts, unchanged source hashes, matching desktop-worker output, and CSV/JSON checks passed in 30.658 seconds.
 - Disabled GitHub Actions following the user's stop request; no active runs remained to cancel. After the user resumed development, retained the disabled state and documented local verification for future checkpoints.
 - Tutorial originals, images, weights, environments, sessions, and local reports remain excluded. Next: LC06 evaluation protocol.
+
+## 2026-11-05 - LC06: reproducible evaluation protocol
+
+- Added docs/EVALUATION.md: deterministic 50-image test and 10-image dev selection, frozen private manifests, fixed CPU generation settings, explicit BLEU/ROUGE-L variants, failure accounting, timing, and a separate human-review rubric.
+- Checked publisher terms and primary metric/model sources; documented educational/non-commercial dataset use, attribution, and unverified overlap with BLIP training data.
+- Audited local metadata: disjoint 6000/1000/1000 train/dev/test lists; all 1000 test identifiers have existing image paths and five references. Selected 50 test/10 dev inputs also have files and reference IDs 0-4. Two known smoke-test inputs do not occur in dev/test.
+- Selection/source hashes are recorded in an ignored local aggregate audit. No images were opened or inference run; no quality scores or human ratings exist for this checkpoint.
+- Documentation checks cover relative links, paths, control characters, task consistency, and git diff whitespace. Existing 188-test/Ruff/offline evidence remains the LC05 baseline; no functional code changed.
+- Tutorial originals, datasets, captions, weights, and local reports remain excluded. GitHub Actions stays disabled. Next: LC07, evaluation runner and measured baseline.

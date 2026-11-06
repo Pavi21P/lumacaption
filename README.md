@@ -128,11 +128,13 @@ Run checks from this directory:
 
 The 188 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
+The [evaluation protocol](docs/EVALUATION.md) defines a fixed 50-image local test subset, lexical metrics, and a separate human-review rubric. The evaluation runner and measured quality baseline are still pending.
+
 BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, or GPU acceleration.
 
 ## Development record
 
-GitHub Actions is currently disabled at the user's request. Development checkpoints run the local tests and lint checks before publication.
+GitHub Actions is currently disabled at the user's request. Development checkpoints run appropriate local checks before publication; documentation-only checkpoints verify links and consistency.
 
 [Progress](docs/PROGRESS.md) · [Design decisions](docs/DECISIONS.md) · [Execution plan](docs/PLAN.md) · [Current status](docs/STATUS.md) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 

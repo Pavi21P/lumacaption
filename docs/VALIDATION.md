@@ -98,3 +98,11 @@ The real --diagnose command returned exit 0 in the Windows user context: Python 
 Because shared model/cache settings moved into config.py, the separate real-model regression was rerun: identical captions, zero network attempts, unchanged source-image hashes, matching desktop-worker output, and CSV/JSON exports in 30.658 seconds. Source photos and reports remain local. Frozen executable behavior, fresh-machine setup, and manual visual/accessibility acceptance remain unverified.
 
 GitHub Actions is disabled at the user's request. LC05 is verified locally; no hosted run is expected for this checkpoint.
+
+## LC06 evaluation-protocol checks (2026-11-05)
+
+Documentation only: added the [versioned evaluation protocol](EVALUATION.md) and verified linked primary dataset/model/metric sources. The protocol specifies project-held-out selection; it makes no claim that Flickr8k is absent from BLIP's training data.
+
+Read-only local metadata checks found 6000 train, 1000 dev, and 1000 test identifiers with no duplicates or pairwise overlap. Raw references contain 40460 rows for 8092 identifiers. All 1000 test identifiers have five references and existing image paths. Deterministic selection produced 50 test and 10 dev images, all with existing paths and references numbered 0-4. Two known prior smoke-test identifiers do not intersect dev/test. Source and selection digests are retained in ignored .local/evaluation-protocol-audit-2026-11-05.json; the complete private image-hash manifest belongs to LC07.
+
+No image decoding, inference, quality scoring, or human review occurred. Relative documentation links, local starting paths, control characters, task states, and git diff whitespace were checked. No application code changed, so the prior LC05 automated and offline checks were not repeated. GitHub Actions remains disabled; no hosted run is expected. Data, original scripts, references, and reports remain outside the published files.
