@@ -1177,3 +1177,58 @@ def test_batch_completion_does_not_steal_focus_from_editor(desktop):
     app._poll()
     root.update()
     assert root.focus_get() == app.editor
+
+
+def test_device_preference_is_local_and_disabled_during_batch(desktop):
+    root, app, path = desktop
+    app.device.set("cuda")
+    root.update()
+    assert not app.dirty
+    app._apply_session(Session())
+    assert app.device.get() == "cuda"
+    assert "device" not in app._snapshot().__dict__
+    app.busy = True
+    app._update_controls()
+    assert str(app.device_box["state"]) == "disabled"
+    app.busy = False
+    app._update_controls()
+    assert str(app.device_box["state"]) == "readonly"
+
+
+def test_worker_snapshots_device_reuses_fallback_and_reloads_on_change(desktop, monkeypatch):
+    root, app, path = desktop
+    calls = []
+
+    class Stub:
+        def __init__(self, *, offline, device):
+            calls.append(device)
+            self.offline = offline
+            self.requested_device = device
+            self.device = "cpu"
+            self.fallback_reason = "Unavailable" if device == "cuda" else ""
+
+        def prepare(self, status):
+            status("Ready")
+
+        def caption(self, image, options):
+            return "A test caption"
+
+    monkeypatch.setattr("lumacaption.desktop.CaptionEngine", Stub)
+    app.add_paths([path])
+    root.update()
+    app.device.set("cuda")
+    app._start()
+    assert app.device_box.instate(["disabled"])
+    pump_until(root, lambda: not app.busy)
+    assert calls == ["cuda"] and "CPU FALLBACK" in app.compute_status.get()
+    row = app.rows[str(path.resolve())]
+    row.status = "pending"
+    app._start()
+    pump_until(root, lambda: not app.busy)
+    assert calls == ["cuda"]
+    row = app.rows[str(path.resolve())]
+    row.status = "pending"
+    app.device.set("cpu")
+    app._start()
+    pump_until(root, lambda: not app.busy)
+    assert calls == ["cuda", "cpu"] and app.compute_status.get() == "LOCAL AI / CPU"

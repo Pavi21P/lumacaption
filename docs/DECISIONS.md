@@ -15,3 +15,12 @@ Only model files are downloaded from Hugging Face. Images are opened locally and
 ## Honest progress
 
 Record implementation, tests, and remaining limitations in each meaningful commit. Keep future improvements separate. Do not create empty commits, backdate commits, or imply work ran on days it did not.
+
+## Explicit device choice; CPU stays default (LC12)
+
+Offer cpu/cuda as a local runtime preference without changing the saved-session
+schema or the fixed CPU evaluation protocol. Preserve the existing CPU environment.
+Report the actual device and fallback reason. Retry CUDA out-of-memory once on CPU;
+leave other inference errors visible. GPU routing is covered with simulations until
+supported hardware is available; no real-GPU performance or compatibility claim.
+See [device behavior](DEVICES.md).

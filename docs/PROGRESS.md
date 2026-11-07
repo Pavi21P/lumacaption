@@ -163,3 +163,13 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - User requested skipping screen-reader testing for now. Marked LC11 blocked and retained the walkthrough for later. No application defect was reported or source fix made.
 - Documentation-only checkpoint: checked links, status/task consistency, whitespace, and publication exclusions. Existing 280-test LC10 evidence remains unchanged; no tests or inference were rerun.
 - Raw observations and fixtures remain private. GitHub Actions stays disabled. Next: LC12 optional device selection with CPU fallback; LC09 and LC11 still need their external test conditions.
+
+## 2026-11-06 - LC12: optional device selection with CPU fallback
+
+- Added desktop cpu/cuda selection and CLI --device, with CPU remaining the default. The header/CLI show the actual device and fallback; settings are locked during a batch, and device preference stays outside saved sessions.
+- Added CUDA availability/placement fallback and a single CPU retry after CUDA out-of-memory. Move model and all inputs together without changing integer token types; preserve generation settings and reuse the fallback engine across batches.
+- Read-only hardware check: Intel HD Graphics 620, torch 2.15.0+cpu, no CUDA build, CUDA unavailable, zero CUDA devices. Kept dependencies/drivers unchanged; no real GPU execution or performance claim.
+- Added 18 simulated engine/CLI cases and two desktop cases. Full suite: 300 passed in 23.76 seconds; Ruff lint/format passed for 26 Python files, including prior keyboard/minimum-layout regressions.
+- Real offline CPU and requested-CUDA fallback runs each captioned two local photos, matched earlier CPU captions, preserved originals, made zero network attempts, and passed real Tk worker plus CSV/JSON export checks. Times: 24.537 and 23.312 seconds; these are CPU smoke timings, not GPU benchmarks.
+- Documented device behavior, hardware limits, and reproducible checks. The fixed CPU evaluation and session format remain unchanged. Existing LC08 binaries predate LC10/LC12 and were not rebuilt.
+- Tutorial originals, datasets, images, weights, local reports, and build outputs remain excluded. GitHub Actions stays disabled. Only LC09 clean-machine and LC11 manual accessibility acceptance remain incomplete, both blocked by their test conditions.

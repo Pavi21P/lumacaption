@@ -30,6 +30,7 @@ def digest(path: Path) -> str:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("images", type=Path, nargs="+")
+    parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
     parser.add_argument("--desktop", action="store_true", help="Also test the real Tk worker")
     parser.add_argument("--report", type=Path, help="Write a local JSON verification report")
     args = parser.parse_args()
@@ -56,7 +57,7 @@ def main() -> None:
         patch("requests.sessions.Session.request", block_http),
         patch("socket.socket.connect", block_network),
     ):
-        engine = CaptionEngine(offline=True)
+        engine = CaptionEngine(offline=True, device=args.device)
         results = list(run_batch(paths, engine, CaptionOptions(), status=print))
         assert len(results) == len(paths)
         assert all(row.status == "done" and row.caption.strip() for row in results), results
@@ -83,7 +84,7 @@ def main() -> None:
 
             root = tk.Tk()
             root.withdraw()
-            app = CaptionApp(root, offline=True, autosave=False)
+            app = CaptionApp(root, offline=True, device=args.device, autosave=False)
             app.engine = engine
             errors: list[str] = []
             try:
@@ -117,6 +118,9 @@ def main() -> None:
     assert before == {path: digest(path) for path in paths}, "An input image changed."
     report = {
         "offline_verified": True,
+        "requested_device": engine.requested_device,
+        "actual_device": engine.device,
+        "fallback_reason": engine.fallback_reason,
         "network_attempts": len(attempts),
         "source_files_unchanged": True,
         "desktop_worker_verified": desktop_ok,

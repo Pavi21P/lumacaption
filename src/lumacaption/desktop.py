@@ -12,7 +12,7 @@ from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk
 
 from .batch import CaptionResult, run_batch
-from .engine import LENGTHS, CaptionEngine, CaptionOptions
+from .engine import DEVICES, LENGTHS, CaptionEngine, CaptionOptions
 from .exporting import export_results
 from .images import MAX_BATCH, SUPPORTED_SUFFIXES, ImageInputError, collect_images, load_image
 from .recovery import RecoveryStore, default_recovery_directory
@@ -32,9 +32,12 @@ class CaptionApp:
         root: tk.Tk,
         *,
         offline: bool = False,
+        device: str = "cpu",
         recovery_dir: Path | None = None,
         autosave: bool = True,
     ) -> None:
+        if device not in DEVICES:
+            raise ValueError("Choose cpu or cuda.")
         self.root = root
         self.rows: dict[str, CaptionResult] = {}
         self.current: str | None = None
@@ -59,12 +62,15 @@ class CaptionApp:
         self.summary = tk.StringVar(value="0 images")
         self.length = tk.StringVar(value="Standard")
         self.offline = tk.BooleanVar(value=offline)
+        self.device = tk.StringVar(value=device)
+        self.compute_status = tk.StringVar(value=f"LOCAL AI / {device.upper()} requested")
         self.recursive = tk.BooleanVar(value=False)
         self._build()
         for variable in (self.length, self.offline, self.recursive):
             variable.trace_add("write", self._settings_changed)
         if autosave:
             self._initialize_recovery(recovery_dir or default_recovery_directory())
+        self.device.trace_add("write", self._device_changed)
         self.root.after(100, self._poll)
         self.root.after_idle(self._initial_focus)
 
@@ -110,7 +116,7 @@ class CaptionApp:
         ).pack(side="left", padx=24)
         tk.Label(
             header,
-            text="LOCAL AI  /  CPU",
+            textvariable=self.compute_status,
             bg="#23424b",
             fg="#bde8d9",
             padx=12,
@@ -183,11 +189,17 @@ class CaptionApp:
 
         options = ttk.Frame(left, padding=(0, 14, 0, 0))
         options.grid(row=3, column=0, sticky="ew")
-        ttk.Label(options, text="Caption length").pack(side="left")
+        options.columnconfigure(1, weight=1)
+        ttk.Label(options, text="Caption length").grid(row=0, column=0, sticky="w")
         self.length_box = ttk.Combobox(
             options, textvariable=self.length, values=list(LENGTHS), state="readonly", width=12
         )
-        self.length_box.pack(side="right")
+        self.length_box.grid(row=0, column=1, sticky="e")
+        ttk.Label(options, text="Compute device").grid(row=1, column=0, sticky="w", pady=(6, 0))
+        self.device_box = ttk.Combobox(
+            options, textvariable=self.device, values=DEVICES, state="readonly", width=12
+        )
+        self.device_box.grid(row=1, column=1, sticky="e", pady=(6, 0))
         self.offline_check = ttk.Checkbutton(
             left, text="Offline — use downloaded model only", variable=self.offline
         )
@@ -303,6 +315,7 @@ class CaptionApp:
             self.relink_button,
             self.tree,
             self.length_box,
+            self.device_box,
             self.offline_check,
             self.generate_button,
             self.retry_button,
@@ -362,6 +375,10 @@ class CaptionApp:
             "model operation. Normal text selection, copy, paste, and undo stay available.",
             parent=self.root,
         )
+
+    def _device_changed(self, *_args) -> None:
+        # A machine preference, not saved caption/session content.
+        self.compute_status.set(f"LOCAL AI / {self.device.get().upper()} requested")
 
     def _initial_focus(self) -> None:
         if not self.closed and self.root.focus_get() is None:
@@ -614,6 +631,7 @@ class CaptionApp:
         self._save_edit()
         options = CaptionOptions(length=self.length.get(), beams=self.beams)
         offline = self.offline.get()
+        device = self.device.get()
         self.busy = True
         self.cancel_event.clear()
         self.batch_finished = 0
@@ -625,19 +643,36 @@ class CaptionApp:
         self.status.set("Preparing captioning model...")
         self._update_controls()
         threading.Thread(
-            target=self._worker, args=(paths, options, offline), daemon=True, name="caption-worker"
+            target=self._worker,
+            args=(paths, options, offline, device),
+            daemon=True,
+            name="caption-worker",
         ).start()
 
-    def _worker(self, paths: list[Path], options: CaptionOptions, offline: bool) -> None:
+    def _worker(
+        self, paths: list[Path], options: CaptionOptions, offline: bool, device: str = "cpu"
+    ) -> None:
+        def report_status(text):
+            self.events.put(("status", text))
+            actual = getattr(self.engine, "device", "cpu").upper()
+            fallback = " FALLBACK" if getattr(self.engine, "fallback_reason", "") else ""
+            self.events.put(("device", f"LOCAL AI / {actual}{fallback}"))
+
         try:
-            if self.engine is None or self.engine.offline != offline:
-                self.engine = CaptionEngine(offline=offline)
+            if (
+                self.engine is None
+                or self.engine.offline != offline
+                or getattr(self.engine, "requested_device", "cpu") != device
+            ):
+                # Release the old model before loading a different device configuration.
+                self.engine = None
+                self.engine = CaptionEngine(offline=offline, device=device)
             for result in run_batch(
                 paths,
                 self.engine,
                 options,
                 cancel=self.cancel_event,
-                status=lambda text: self.events.put(("status", text)),
+                status=report_status,
             ):
                 self.events.put(("result", result))
         except Exception as exc:
@@ -651,6 +686,8 @@ class CaptionApp:
                 event, payload = self.events.get_nowait()
                 if event == "status":
                     self.status.set(payload)
+                elif event == "device":
+                    self.compute_status.set(payload)
                 elif event == "result":
                     self.rows[payload.path] = payload
                     self.tree.item(
@@ -994,6 +1031,7 @@ class CaptionApp:
             state="normal" if not self.busy and self.current in self.image_errors else "disabled"
         )
         self.length_box.configure(state="disabled" if self.busy else "readonly")
+        self.device_box.configure(state="disabled" if self.busy else "readonly")
         self.generate_button.configure(state="normal" if pending and not self.busy else "disabled")
         self.retry_button.configure(state="normal" if errors and not self.busy else "disabled")
         self.cancel_button.configure(
@@ -1041,9 +1079,9 @@ class CaptionApp:
         self.root.destroy()
 
 
-def main(*, offline: bool = False) -> None:
+def main(*, offline: bool = False, device: str = "cpu") -> None:
     root = tk.Tk()
-    CaptionApp(root, offline=offline)
+    CaptionApp(root, offline=offline, device=device)
     root.mainloop()
 
 

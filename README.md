@@ -8,7 +8,7 @@ LumaCaption's application code is written from scratch. Its AI is the pretrained
 
 - Add individual images or a folder, optionally including subfolders.
 - Preview images with correct EXIF orientation and transparent backgrounds.
-- Generate short, standard, or long captions on your CPU.
+- Generate short, standard, or long captions on CPU; optionally request CUDA with CPU fallback.
 - Keep the window responsive while processing; cancel between images.
 - Edit captions, restore the original AI text, and copy to the clipboard.
 - Save and reopen a session with its queue, edited captions, and settings.
@@ -64,6 +64,14 @@ $env:LUMACAPTION_CACHE = Join-Path $PWD ".cache\models"
 ~~~
 
 An existing CLI export is protected unless you pass `--force`. Exit codes: 0 success, 1 one or more image failures, 2 input/setup failure, 130 interrupted.
+
+## Compute device
+
+CPU is the default. Choose cpu or cuda in the desktop's **Compute device** control,
+or pass --device cuda to the launcher/CLI. The header and CLI status report the
+actual device; unavailable CUDA falls back to CPU. This machine's CPU fallback is
+verified; real GPU execution and performance remain unverified. Device selection
+does not install drivers or change dependencies. See [device behavior and limits](docs/DEVICES.md).
 
 ## Local diagnostics
 
@@ -143,11 +151,11 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 280 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 300 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 The [evaluation protocol and CLI instructions](docs/EVALUATION.md) define a fixed 50-image local test subset, lexical metrics, and a separate human-review rubric. The first offline run completed all 50 images with zero network attempts: BLEU-1 57.60, BLEU-4 21.46, and ROUGE-L 47.21 on the defined 0-100 scales. These are reference-overlap scores, not accuracy percentages or proof of improvement over the tutorial. Human review is pending; see the [configuration, timings, and limitations](docs/VALIDATION.md#lc07-evaluation-runner-and-baseline-2026-11-05).
 
-BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions, runs on CPU, and does not include custom model training, an installer executable, or GPU acceleration.
+BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions and defaults to CPU. It does not include custom model training or an installer executable. The optional CUDA path is experimental; real GPU validation is pending.
 
 ## Development record
 

@@ -249,3 +249,48 @@ LC10 results remain applicable; documentation/link/whitespace checks were perfor
 without repeating tests or inference. Private setup and raw observations remain in
 .local/lc11-review-2026-11-06/. Resume the [manual walkthrough](KEYBOARD.md) when
 the user is ready; proceed independently with LC12 in the meantime.
+
+## LC12 device selection and CPU fallback (2026-11-06)
+
+Read-only host checks found Intel HD Graphics 620 and torch 2.15.0+cpu.
+torch.version.cuda was null, torch.cuda.is_available() was false, and
+torch.cuda.device_count() was zero. No drivers, dependency locks, or installed
+packages were changed to attempt GPU execution.
+
+The source app now supports cpu/cuda selection in the desktop and CLI. Eighteen
+new simulated engine/CLI cases check CPU-without-CUDA-probing, model and tensor
+placement, integer token preservation, unavailable/failed CUDA initialization,
+placement failure, one CPU retry after CUDA out-of-memory, failed CPU recovery,
+non-memory errors, invalid device names, CLI forwarding, and observable fallback.
+Two desktop cases cover local-only preference, busy-state controls, fallback-engine
+reuse, actual-device reporting, and reloading when the request changes.
+
+Full regression: **300 passed in 23.76 seconds**. Ruff lint and formatting passed for
+26 Python files. Existing keyboard traversal, minimum 960x680 layout, saved-session,
+recovery, evaluation, and packaging-unit regressions passed. These simulated CUDA
+cases do not establish actual GPU execution or compatibility.
+
+| Real-model smoke | Requested CPU | Requested CUDA |
+| --- | --- | --- |
+| Actual device | CPU | CPU fallback |
+| Input photos captioned | 2 | 2 |
+| Captions match prior LC05 source run | Yes | Yes |
+| Network attempts | 0 | 0 |
+| Original input hashes unchanged | Yes | Yes |
+| Real withdrawn Tk worker | Passed | Passed |
+| CSV/JSON exports | Passed | Passed |
+| Elapsed seconds | 24.537 | 23.312 |
+
+The CUDA-request run reported that CUDA was unavailable. Both used existing pinned
+BLIP weights with HTTP/socket calls blocked and offline mode enabled. Reports are
+.local/offline-lc12-cpu-2026-11-06.json and
+.local/offline-lc12-cuda-2026-11-06.json; adjacent logs retain raw details.
+Timings include setup and concurrent validation activity and are not an isolated
+performance benchmark. No GPU throughput or memory measurements exist.
+
+The evaluation runner still defaults to CPU under its fixed protocol; its baseline
+was not rerun. Device choice is an app-window preference, not new saved-session data.
+The old LC08 executable was not rebuilt; its smoke results apply only to that older
+snapshot. Use the current source launcher for LC10/LC12, or make and verify a new
+named build. Clean-machine and manual accessibility acceptance remain pending.
+See [device behavior and limits](DEVICES.md). GitHub Actions remains disabled.

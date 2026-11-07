@@ -18,7 +18,7 @@ One row is one bounded work session, usually one day's work when the user return
 | LC09 | Blocked | Clean Windows distribution verification | Test the executable and model setup on a clean Windows machine/VM, including a path with spaces and offline restart. Record exact environment and results. If unavailable, mark blocked rather than passed. | LC08 + clean Windows environment |
 | LC10 | Done | Keyboard navigation and focus | Add useful shortcuts, predictable focus, and accessible control labels; test keyboard-only add/generate/edit/export/session flows. | LC02 |
 | LC11 | Blocked | Manual accessibility acceptance | Use Windows assistive technology with a user/tester to review announcements, focus, progress, and errors; record evidence and fix observed issues. If unavailable, mark blocked. | LC10 + manual testing |
-| LC12 | Next | Optional GPU inference | Add explicit device selection with CPU fallback and tests; measure real speed/memory only on available supported hardware. Do not replace the working CPU setup merely to attempt a benchmark. | LC05 + hardware decision |
+| LC12 | Done | Optional GPU inference | Add explicit device selection with CPU fallback and tests; measure real speed/memory only on available supported hardware. Do not replace the working CPU setup merely to attempt a benchmark. | LC05 + hardware decision |
 
 LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
 WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage
@@ -29,7 +29,12 @@ software were installed. LC10 proceeded as the next independent ready task.
 LC11 blocker (2026-11-06): the user reported the app and captioning worked, then
 confirmed no screen reader was used and final edit/export/session checks were not
 tried. Screen-reader testing is deferred at the user's request. Keep LC11 incomplete;
-resume the [manual walkthrough](KEYBOARD.md) when the user is ready. LC12 is next.
+resume the [manual walkthrough](KEYBOARD.md) when the user is ready.
+
+LC12 completed (2026-11-06): CPU/CUDA selection and tested CPU fallback are implemented.
+The host has Intel HD Graphics 620 and CPU-only PyTorch; real GPU performance and
+compatibility remain unverified. The installed environment was preserved. LC09 and
+LC11 are the only incomplete planned phases, both waiting on their test conditions.
 
 ## Session routine
 

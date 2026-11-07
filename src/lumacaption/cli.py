@@ -16,6 +16,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("inputs", nargs="*", type=Path, help="Image files or folders")
     parser.add_argument("--recursive", action="store_true", help="Include subfolders")
     parser.add_argument("--offline", action="store_true", help="Only use cached model files")
+    parser.add_argument(
+        "--device",
+        choices=("cpu", "cuda"),
+        default="cpu",
+        help="Compute device (default: cpu); CUDA falls back to CPU if unavailable",
+    )
     parser.add_argument("--length", choices=LENGTHS, default="Standard")
     parser.add_argument("--beams", type=int, choices=range(1, 6), default=3)
     parser.add_argument("--output", type=Path, help="Export to .csv or .json")
@@ -41,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     from .images import ImageInputError, collect_images
 
     status = lambda message: print(message, file=sys.stderr, flush=True)  # noqa: E731
-    engine = CaptionEngine(offline=args.offline)
+    engine = CaptionEngine(offline=args.offline, device=args.device)
     try:
         if args.download_model:
             engine.prepare(status)
@@ -49,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.inputs:
             from .desktop import main as desktop_main
 
-            desktop_main(offline=args.offline)
+            desktop_main(offline=args.offline, device=args.device)
             return 0
         if args.output:
             if args.output.suffix.lower() not in {".csv", ".json"}:

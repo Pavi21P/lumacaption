@@ -5,7 +5,7 @@ Keep the whole output folder together. Model weights are downloaded separately.
 This is a repeatable pinned recipe; identical binary hashes across rebuilds are not promised.
 
 The existing local LC08 bundle is a snapshot of that checkpoint. Later source
-changes, including LC10 keyboard support, require a new build with a new BuildName.
+changes, including LC10 keyboard support and LC12 device selection, require a new build with a new BuildName.
 Do not treat the old executable's successful smoke report as validation of new code.
 
 ## Build prerequisites and command
