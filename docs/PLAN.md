@@ -47,6 +47,10 @@ bugcheck but does not establish cause. See [review evidence](VALIDATION.md#lc08r
 The build remains blocked: arrange a separate Windows build host or an agreed
 resource plan before retrying. Passing the disk minimum alone is not clearance.
 
+Follow-up after user cleanup (2026-11-07): D: now has 4.19 GiB free and available
+RAM is 2.85 GiB. The disk minimum is met; LC08R remains paused pending the resource
+plan or separate host. No build or model run was started.
+
 ## Session routine
 
 1. Read STATUS.md and the selected row; inspect only relevant code and current Git changes.

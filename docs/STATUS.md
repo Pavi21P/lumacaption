@@ -3,7 +3,7 @@
 Updated: 2026-11-07 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC08R - read-only resource review complete; build still blocked
+Current checkpoint: LC08R - disk minimum now met; build still paused
 Next action: arrange a separate Windows build host or agree on a resource plan
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
@@ -25,8 +25,8 @@ GitHub Actions: disabled at user request; do not re-enable unasked.
 LC08R compilation/collection completed; checksum finalization failed with OSError
 [Errno 22] Invalid argument in hashlib.file_digest. No runtime pass or sealed manifest.
 Unverified output: dist/LumaCaption-0.1.0-win64-lc12/LumaCaption/; do not distribute.
-Read-only review: 2.61 GiB free build-drive space, below the existing 3 GiB minimum;
-3.01 GiB RAM available of 7.87 GiB. Snapshots do not establish safe build capacity.
+After user cleanup: 4.19 GiB free build-drive space, above the 3 GiB disk minimum;
+2.85 GiB RAM available. Snapshots do not establish safe build capacity.
 A recent Kernel-Power event records BugcheckCode 59; exact crash cause is unknown.
 See docs/VALIDATION.md for resource/event evidence and limits. No cleanup or system changes.
 No automatic packaging retry: use a separate host or agree on a resource plan first.

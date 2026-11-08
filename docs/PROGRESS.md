@@ -196,3 +196,9 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Found a recent Kernel-Power event 41 with BugcheckCode 59; recorded its time and numeric code without attributing a cause. No crash dump was analyzed or published.
 - Kept LC08R blocked; documented the separate-host/resource-plan prerequisite. Preserved all user files and system settings. LC09/LC11 acceptance boundaries remain unchanged.
 - Documentation-only checks: local links/paths, compact status, task consistency, git diff --check, and publication exclusions. Prior source tests remain the baseline; no heavy checks repeated.
+
+## 2026-11-07 - LC08R: disk-space blocker cleared after user cleanup
+
+- User reported freeing space. A single successful Windows CIM counter read confirmed D: at 4.19 GiB free (previously 2.61 GiB), C: at 7.26 GiB free, and available physical RAM at 2.85 GiB. Discarded unavailable sandbox drive counters.
+- The build's 3 GiB disk minimum is now met. Kept packaging paused: disk headroom alone does not establish safe build capacity or explain the prior crash.
+- Updated plan/status and checked whitespace and compact handoff length. No app, model, build, tests, cleanup, or system-setting changes were performed.
