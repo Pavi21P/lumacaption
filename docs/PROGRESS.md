@@ -188,3 +188,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - User requested continuing progress without putting pressure on the PC. Recorded that preference in project instructions; no automatic packaging/inference retry or unrelated app shutdown.
 - Completed the interrupted documentation checkpoint for the failed refresh. Source app remains at the tested LC12 baseline, and the new executable remains unverified.
 - Limited this session to small file edits, documentation/exclusion checks, and Git publication. No builds, model runs, dependency installation, or full test suite.
+
+## 2026-11-07 - LC08R: read-only resource investigation
+
+- Honored the low-load preference with a bounded Windows counter/event review; no app, model, build, dependency installation, full tests, or broad disk scan.
+- Observed 7.87 GiB physical RAM with 3.01 GiB available, and 2.61 GiB free on the project drive: below the existing 3 GiB build minimum. Counters are a snapshot, not proof of safe build capacity.
+- Found a recent Kernel-Power event 41 with BugcheckCode 59; recorded its time and numeric code without attributing a cause. No crash dump was analyzed or published.
+- Kept LC08R blocked; documented the separate-host/resource-plan prerequisite. Preserved all user files and system settings. LC09/LC11 acceptance boundaries remain unchanged.
+- Documentation-only checks: local links/paths, compact status, task consistency, git diff --check, and publication exclusions. Prior source tests remain the baseline; no heavy checks repeated.

@@ -40,6 +40,13 @@ the user reported a blue screen after resource/command failures. The refreshed
 bundle is unverified. Packaging is blocked pending resource investigation or a
 separate build host; do not automatically retry the heavy build on continuation.
 
+LC08R resource review (2026-11-07): completed a bounded read-only counter/event
+review. The project drive has 2.61 GiB free, below the recipe's 3 GiB disk minimum;
+available RAM was 3.01 GiB of 7.87 GiB. A recent Kernel-Power event records a
+bugcheck but does not establish cause. See [review evidence](VALIDATION.md#lc08r-low-load-resource-review-2026-11-07).
+The build remains blocked: arrange a separate Windows build host or an agreed
+resource plan before retrying. Passing the disk minimum alone is not clearance.
+
 ## Session routine
 
 1. Read STATUS.md and the selected row; inspect only relevant code and current Git changes.

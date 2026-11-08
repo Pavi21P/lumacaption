@@ -23,6 +23,12 @@ so the exact cause is unconfirmed. Heavy build/model work has stopped. Review
 resources or use a separate build machine before retrying; the source app remains
 at the previously tested LC12 checkpoint. The original LC08 folder was preserved.
 
+The November 7 read-only review found 2.61 GiB free on the build drive, below the
+recipe's existing 3 GiB minimum. Passing that minimum later would not establish
+safe memory/disk capacity for a full build. See the [resource review](VALIDATION.md#lc08r-low-load-resource-review-2026-11-07).
+Keep retries paused pending a separate host or an agreed resource plan; this review
+did not run or validate any generated executable.
+
 ## Build prerequisites and command
 
 Use Windows x64, CPython 3.11.9, and the existing source environment created by

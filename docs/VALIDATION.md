@@ -323,3 +323,39 @@ retry it on a generic continuation. Source code and dependencies did not change;
 the prior LC12 automated and offline results remain the source baseline.
 Publication checks for this documentation-only checkpoint cover links, whitespace,
 task states, and exclusions. No inference or full test suite was repeated.
+
+## LC08R low-load resource review (2026-11-07)
+
+Read Windows memory, fixed-disk, and page-file counters once; queried at most eight
+recent System events (IDs 41, 1001, 2004) over three days. No app, dependency import
+probe, inference, packaging, disk scan, or crash-dump analysis was started.
+The sandbox denied CIM access; the successful read used the Windows user context.
+Discarded the failed query's null-derived zero values.
+
+| Counter | Observed snapshot |
+| --- | --- |
+| Physical RAM | 7.87 GiB total; 3.01 GiB available |
+| Windows virtual-memory counters | 15.09 GiB total; 8.14 GiB free |
+| System drive (C:) | 7.26 GiB free of 124.76 GiB |
+| Project/build drive (D:) | 2.61 GiB free of 97.66 GiB |
+| Page file | 7,393 MB allocated; 809 MB in use; 3,620 MB peak use |
+
+These are point-in-time counters, not a load test or a measurement of build peaks.
+The page-file peak covers the current boot, not necessarily the failed build.
+The project drive is below the existing 3 GiB build guard in
+[scripts/build_windows.py](../scripts/build_windows.py). Passing that guard later
+would not establish that a build is safe: it is a minimum disk check, not a measured
+resource budget. No files were deleted and no page-file/system settings changed.
+
+The bounded System-event query returned a Microsoft-Windows-Kernel-Power event 41
+at 2026-11-07T00:45:49Z (November 6, 18:45:49 Central), with BugcheckCode 59
+(decimal; 0x3B). This corroborates the reported incident but does not identify a
+responsible driver, application, or hardware fault. No causal diagnosis is claimed.
+Raw event payloads, memory dumps, and machine identifiers were not published.
+
+LC08R remains blocked. Prefer a separate Windows build host; any same-PC retry
+requires a deliberate resource plan and agreed execution environment. Neither a
+passing disk check nor this review authorizes an automatic retry. Preserve the
+failed output until a retention/cleanup decision is made. LC09 and LC11 remain
+blocked independently. Documentation links and whitespace were checked; the
+existing LC12 test baseline is unchanged. GitHub Actions remains disabled.
