@@ -379,3 +379,29 @@ could not write the existing cache. No real model was loaded and no inference or
 packaging was repeated. Application code/dependencies are unchanged; LC12 remains
 the real-caption baseline. The old failing artifact and crash cause remain unknown.
 LC08R is still blocked pending a suitable execution environment/resource plan.
+
+## LC08P read-only build prerequisites (2026-11-07)
+
+`Build-Windows.ps1 -CheckOnly` forwards to `scripts/build_windows.py --check-only`.
+The shared prerequisite function checks the pinned Windows/Python environment,
+installed package metadata, project version, output/work-name availability, and
+existing 3 GiB disk guard. It returns before creating any build folders. It does
+not import Torch/Transformers or run PyInstaller. Missing package metadata is
+reported as a check failure. The wrapper rejects installation plus check-only.
+
+Six synthetic cases cover a valid environment at the exact disk minimum, disk
+below that minimum, existing output, existing work folder, missing dependency,
+and invalid output name. Tests prohibit build/staging/finalization/subprocess
+calls and compare filesystem entries before/after. Existing build safety tests
+continue to exercise the shared prerequisite checks.
+
+28 focused packaging tests passed. The full sequential suite passed 310 tests in
+23.94 seconds. Ruff lint/format passed for 26 files. The actual PowerShell command
+with a fresh LumaCaption-preflight-check name passed against the installed metadata;
+no corresponding output/work folder existed before or after. The wrapper rejected
+-CheckOnly with -InstallBuildTools. No installation or actual build was run.
+
+These results are prerequisite/dispatch evidence, not a RAM assessment, reserved
+disk capacity, dependency-import check, packaged-runtime pass, or crash diagnosis.
+The failed LC08R bundle remains untouched and unverified. Application code and
+dependencies are unchanged. No model inference or heavy artifact scan was run.

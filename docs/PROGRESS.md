@@ -210,3 +210,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Validation: 22 focused packaging tests passed, then 304 tests passed sequentially in 24.55 seconds; Ruff lint and formatting passed for 26 files. Used --no-cache after sandbox access denied the existing Ruff cache.
 - No executable build, real artifact hash scan, model load, inference, downloads, or system changes. Tests use tiny files and fake captioners. The existing failed bundle was untouched.
 - LC08R remains paused: this makes a future failure diagnosable; it neither identifies the old failing file nor fixes/explains the blue screen. LC09/LC11 remain blocked. Updated plan/status and checked publication exclusions before the authorized checkpoint push.
+
+## 2026-11-07 - LC08P: read-only build prerequisite command
+
+- Added PowerShell -CheckOnly and Python --check-only. Shared existing build prerequisites without staging, dependency installation, PyInstaller, model imports, or artifact hashing. Missing package metadata now returns a handled failure.
+- Rejected -CheckOnly combined with -InstallBuildTools before either operation. Messages distinguish prerequisite failures from builds and state that RAM/runtime capacity is unverified.
+- Added six synthetic check-only cases covering success at the disk minimum, insufficient disk, existing output/work folders, missing dependency, and invalid name. They prohibit build/staging/subprocess calls and confirm no new files.
+- Validation: 28 focused packaging tests; full sequential suite 310 passed in 23.94 seconds; Ruff lint/format passed for 26 files. Actual PowerShell check-only passed and created no build/output folders; the incompatible flag combination was rejected.
+- No build, model/inference, installation, cleanup, or system changes. No claim that passing prerequisites makes a heavy retry safe. LC08R/LC09/LC11 remain blocked; updated handoff and publication checks before push.

@@ -38,6 +38,27 @@ the error and output for investigation. This diagnostic improvement was tested
 with tiny synthetic files; the failed LC08R folder has not been rehashed or validated.
 See [test evidence](VALIDATION.md#lc08d-checksum-error-diagnostics-2026-11-07).
 
+## Check prerequisites without building
+
+From the project folder, use a new output name:
+
+~~~powershell
+.\Build-Windows.ps1 -CheckOnly -BuildName "LumaCaption-preflight-check"
+~~~
+
+Python exposes the same check through `scripts/build_windows.py` with
+`--check-only --name LumaCaption-preflight-check`. This reads the Windows/Python architecture and version,
+locked installed-package metadata, project version, output-name availability, and
+3 GiB disk minimum. It shares those checks with the real build command, but does
+not create staging/output folders, install tools, load the AI model, hash the old
+bundle, or start PyInstaller. Reusing an existing output/work name fails; nothing
+is removed. Missing dependencies produce a failed check, not an installation.
+
+`-CheckOnly` cannot be combined with `-InstallBuildTools`. A successful check means
+only these prerequisites passed at that moment. It does not measure RAM, reserve
+disk space, validate installed imports, or establish safe build/runtime capacity.
+LC08R remains paused pending an agreed execution environment/resource plan.
+
 ## Build prerequisites and command
 
 Use Windows x64, CPython 3.11.9, and the existing source environment created by

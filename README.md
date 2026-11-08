@@ -151,7 +151,7 @@ Run checks from this directory:
 .\.venv\Scripts\python.exe -m pip check
 ~~~
 
-The 304 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
+The 310 automated tests use synthetic images and a fake captioner; they do not download model weights. A separate real-BLIP smoke test also passed with network calls blocked, including the desktop worker and exports. See [validation evidence and reproduction steps](docs/VALIDATION.md).
 
 The [evaluation protocol and CLI instructions](docs/EVALUATION.md) define a fixed 50-image local test subset, lexical metrics, and a separate human-review rubric. The first offline run completed all 50 images with zero network attempts: BLEU-1 57.60, BLEU-4 21.46, and ROUGE-L 47.21 on the defined 0-100 scales. These are reference-overlap scores, not accuracy percentages or proof of improvement over the tutorial. Human review is pending; see the [configuration, timings, and limitations](docs/VALIDATION.md#lc07-evaluation-runner-and-baseline-2026-11-05).
 

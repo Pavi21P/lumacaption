@@ -118,7 +118,8 @@ def stage_metadata(stage: Path, version: str) -> None:
             (folder / name).write_text(content, encoding="utf-8")
 
 
-def build(name: str) -> Path:
+def check_build(name: str) -> tuple[Path, Path, dict, dict]:
+    """Read prerequisites without creating output or importing the ML runtime."""
     name = validate_name(name)
     versions = check_environment()
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
@@ -130,6 +131,11 @@ def build(name: str) -> Path:
         raise ValueError("Build output already exists; choose a new --name. Nothing was removed.")
     if shutil.disk_usage(ROOT).free < 3 * 1024**3:
         raise ValueError("At least 3 GiB free disk space is required for this build.")
+    return output, work, versions, project
+
+
+def build(name: str) -> Path:
+    output, work, versions, project = check_build(name)
     work.mkdir(parents=True)
     stage = work / "stage"
     stage.mkdir()
@@ -233,11 +239,22 @@ def finish_bundle(output: Path, stage: Path, versions: dict, project: dict) -> P
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", default="LumaCaption-0.1.0-win64")
+    parser.add_argument(
+        "--check-only", action="store_true", help="Check prerequisites without starting a build."
+    )
     args = parser.parse_args()
     try:
-        build(args.name)
-    except (ValueError, OSError, subprocess.SubprocessError) as exc:
-        print(f"Build failed: {exc}", file=sys.stderr)
+        if args.check_only:
+            check_build(args.name)
+            print(
+                "Build prerequisite checks passed; no build started. "
+                "RAM capacity and runtime compatibility have not been verified."
+            )
+        else:
+            build(args.name)
+    except (ValueError, OSError, subprocess.SubprocessError, metadata.PackageNotFoundError) as exc:
+        label = "Build check failed" if args.check_only else "Build failed"
+        print(f"{label}: {exc}", file=sys.stderr)
         return 1
     return 0
 

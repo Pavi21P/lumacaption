@@ -205,3 +205,43 @@ def test_hash_failure_exits_without_manifest_or_retry(builder, monkeypatch, tmp_
     assert len(attempts) == 1
     assert not (bundle / "build-info.json").exists()
     assert failed.read_bytes() == b"fixture, not an executable"
+
+
+@pytest.mark.parametrize("problem", [None, "disk", "output", "work", "dependency", "name"])
+def test_check_only_never_builds_or_writes(builder, monkeypatch, tmp_path, capsys, problem):
+    monkeypatch.setattr(builder, "ROOT", tmp_path)
+    (tmp_path / "pyproject.toml").write_text('[project]\nversion="0.1.0"\n')
+    monkeypatch.setattr(builder, "check_environment", lambda: {"fake-package": "1.0"})
+    monkeypatch.setattr(
+        builder.shutil,
+        "disk_usage",
+        lambda path: SimpleNamespace(free=(3 * 1024**3 - 1 if problem == "disk" else 3 * 1024**3)),
+    )
+    if problem in ("output", "work"):
+        parent = "dist" if problem == "output" else "build"
+        (tmp_path / parent / "check fixture").mkdir(parents=True)
+    if problem == "dependency":
+
+        def missing():
+            raise builder.metadata.PackageNotFoundError("fake-package")
+
+        monkeypatch.setattr(builder, "check_environment", missing)
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Check-only must not build, install, stage, or finalize")
+
+    for name in ("build", "collect_notices", "stage_metadata", "finish_bundle"):
+        monkeypatch.setattr(builder, name, forbidden)
+    monkeypatch.setattr(builder.subprocess, "run", forbidden)
+    name = "../escape" if problem == "name" else "check fixture"
+    monkeypatch.setattr(sys, "argv", ["build_windows.py", "--name", name, "--check-only"])
+    before = {p.relative_to(tmp_path) for p in tmp_path.rglob("*")}
+    assert builder.main() == (1 if problem else 0)
+    captured = capsys.readouterr()
+    if problem:
+        assert "Build check failed" in captured.err
+        assert "checks passed" not in captured.out
+    else:
+        assert "no build started" in captured.out
+        assert "RAM capacity" in captured.out
+    assert {p.relative_to(tmp_path) for p in tmp_path.rglob("*")} == before
