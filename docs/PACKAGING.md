@@ -8,6 +8,21 @@ The existing local LC08 bundle is a snapshot of that checkpoint. Later source
 changes, including LC10 keyboard support and LC12 device selection, require a new build with a new BuildName.
 Do not treat the old executable's successful smoke report as validation of new code.
 
+## LC08R refresh attempt: unverified
+
+The attempted refresh at dist/LumaCaption-0.1.0-win64-lc12/LumaCaption/ is not a
+verified distribution. PyInstaller completed compilation and collection, but
+finalization failed while reading a generated file for SHA-256 hashing with
+OSError: [Errno 22] Invalid argument. The manifest and runtime checks were not
+completed. Preserve these local files as failed-build evidence; do not distribute
+or present them as tested.
+
+The host showed low available memory and command-start failures. The user then
+reported a Windows blue screen during the attempt. No crash dump was analyzed,
+so the exact cause is unconfirmed. Heavy build/model work has stopped. Review
+resources or use a separate build machine before retrying; the source app remains
+at the previously tested LC12 checkpoint. The original LC08 folder was preserved.
+
 ## Build prerequisites and command
 
 Use Windows x64, CPython 3.11.9, and the existing source environment created by

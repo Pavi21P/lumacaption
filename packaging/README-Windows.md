@@ -27,6 +27,18 @@ $env:LUMACAPTION_CACHE = "D:\your-model-cache"
 Sessions and exports are saved where you choose; recovery remains under your
 local app-data folder. The executable folder does not contain your photos.
 
+## Keyboard and compute device
+
+F1 shows keyboard help. Ctrl+I adds images, Ctrl+Enter generates captions, Ctrl+E
+exports, and Ctrl+S / Ctrl+O save or open sessions. F6 switches between the queue
+and caption editor; Tab and Shift+Tab leave the editor without inserting tabs.
+
+CPU is the default. The desktop Compute device selector or --device cuda requests
+CUDA, with CPU fallback when unavailable. The header/CLI reports the actual device.
+This CPU-built package does not contain a CUDA-enabled PyTorch runtime; requesting
+CUDA here falls back to CPU. It does not install drivers or GPU dependencies.
+Real GPU execution remains unverified. Device choice is not saved in sessions.
+
 ## Verification and notices
 
 build-info.json records pinned package versions, source hashes, and bundled file

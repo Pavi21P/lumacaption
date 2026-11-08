@@ -294,3 +294,32 @@ The old LC08 executable was not rebuilt; its smoke results apply only to that ol
 snapshot. Use the current source launcher for LC10/LC12, or make and verify a new
 named build. Clean-machine and manual accessibility acceptance remain pending.
 See [device behavior and limits](DEVICES.md). GitHub Actions remains disabled.
+
+## LC08R failed refresh and host incident (2026-11-06)
+
+The refresh used the existing pinned environment and current LC12 source at
+03bda3f, with updated bundled usage notes. The original LC08 output was preserved.
+PyInstaller's log reports both executable launchers compiled and COLLECT completed.
+However, finalization failed when hashlib.file_digest called fileobj.readinto:
+OSError: [Errno 22] Invalid argument. A finalization-only retry reproduced that
+failure. The generated artifact responsible was not identified.
+
+The host reported approximately 621,204 KiB free physical memory and 2,838,532,096
+bytes free on the build drive during diagnosis. PowerShell initialization and a
+command-runner host also failed. The user reported a Windows blue screen during
+this attempt, stated Firefox was the only app they had open, and then requested
+publication of current changes. These observations do not establish the crash's
+exact cause; no crash dump or system-event analysis was performed.
+
+The attempted folder is dist/LumaCaption-0.1.0-win64-lc12/LumaCaption/. It is
+**unverified and must not be distributed as a tested build**. No sealed checksum
+manifest, frozen diagnostics, or runtime caption checks were completed. The private
+verification harness was prepared but not run. Build log:
+build/LumaCaption-0.1.0-win64-lc12/build.log.
+
+Heavy build/model activity has stopped. LC08R is blocked until resource conditions
+are investigated or a separate build machine is available. Do not automatically
+retry it on a generic continuation. Source code and dependencies did not change;
+the prior LC12 automated and offline results remain the source baseline.
+Publication checks for this documentation-only checkpoint cover links, whitespace,
+task states, and exclusions. No inference or full test suite was repeated.

@@ -19,6 +19,7 @@ One row is one bounded work session, usually one day's work when the user return
 | LC10 | Done | Keyboard navigation and focus | Add useful shortcuts, predictable focus, and accessible control labels; test keyboard-only add/generate/edit/export/session flows. | LC02 |
 | LC11 | Blocked | Manual accessibility acceptance | Use Windows assistive technology with a user/tester to review announcements, focus, progress, and errors; record evidence and fix observed issues. If unavailable, mark blocked. | LC10 + manual testing |
 | LC12 | Done | Optional GPU inference | Add explicit device selection with CPU fallback and tests; measure real speed/memory only on available supported hardware. Do not replace the working CPU setup merely to attempt a benchmark. | LC05 + hardware decision |
+| LC08R | Blocked | Refresh portable executable after LC10/LC12 | Build a new named folder, retain old output, verify frozen diagnostics and offline CPU/fallback captions, and record source/file hashes. | LC10, LC12 |
 
 LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
 WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage
@@ -34,7 +35,10 @@ resume the [manual walkthrough](KEYBOARD.md) when the user is ready.
 LC12 completed (2026-11-06): CPU/CUDA selection and tested CPU fallback are implemented.
 The host has Intel HD Graphics 620 and CPU-only PyTorch; real GPU performance and
 compatibility remain unverified. The installed environment was preserved. LC09 and
-LC11 are the only incomplete planned phases, both waiting on their test conditions.
+LC11 await external test conditions. LC08R failed during checksum finalization;
+the user reported a blue screen after resource/command failures. The refreshed
+bundle is unverified. Packaging is blocked pending resource investigation or a
+separate build host; do not automatically retry the heavy build on continuation.
 
 ## Session routine
 

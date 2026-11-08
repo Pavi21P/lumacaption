@@ -9,6 +9,7 @@
 
 ## Efficient execution
 
+- After the reported blue screen during LC08R, the user requested low PC load. Default to lightweight edits and focused checks, run resource-sensitive work sequentially, and do not automatically retry packaging or model inference on a generic continuation. Review resource needs and agree on a safe execution environment before another heavy build. Do not close unrelated user apps.
 - Reuse the installed .venv and downloaded model. Do not reinstall, redownload, rescan the whole repository, reread all historical logs, or run a broad review by default.
 - Use targeted rg searches and batch independent reads. Keep tool output short.
 - Work as one agent unless the user explicitly requests delegation.

@@ -173,3 +173,18 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Real offline CPU and requested-CUDA fallback runs each captioned two local photos, matched earlier CPU captions, preserved originals, made zero network attempts, and passed real Tk worker plus CSV/JSON export checks. Times: 24.537 and 23.312 seconds; these are CPU smoke timings, not GPU benchmarks.
 - Documented device behavior, hardware limits, and reproducible checks. The fixed CPU evaluation and session format remain unchanged. Existing LC08 binaries predate LC10/LC12 and were not rebuilt.
 - Tutorial originals, datasets, images, weights, local reports, and build outputs remain excluded. GitHub Actions stays disabled. Only LC09 clean-machine and LC11 manual accessibility acceptance remain incomplete, both blocked by their test conditions.
+
+## 2026-11-06 - LC08R: failed package refresh; heavy work stopped
+
+- Attempted a new named portable build from tested LC12 source, preserving the original LC08 folder. Updated bundled usage notes for keyboard controls and CPU/CUDA selection.
+- PyInstaller compiled both launchers and completed collection. Finalization failed in hashlib.file_digest with OSError: [Errno 22] Invalid argument while reading a generated artifact; the offending file was not identified.
+- Observed low available memory and command-start failures. The user reported the PC blue-screened and subsequently requested pushing current changes. No dump analysis was performed; the exact cause is not established.
+- Stopped build/model work. No frozen diagnostics, caption smoke, final hash audit, or completed manifest is claimed for LC08R. Corrected draft documentation that had described the new bundle as usable.
+- Marked LC08R blocked pending resource investigation or another build host; no automatic heavy retry on continuation. The tested LC12 source baseline is unchanged.
+- This publication contains documentation only. Checked links, task/status consistency, whitespace, and tracked/history exclusions; did not rerun tests, inference, or packaging. Failed output, logs, fixtures, weights, and tutorial originals remain outside Git. Actions stays disabled.
+
+## 2026-11-07 - LC08R: lightweight publication checkpoint
+
+- User requested continuing progress without putting pressure on the PC. Recorded that preference in project instructions; no automatic packaging/inference retry or unrelated app shutdown.
+- Completed the interrupted documentation checkpoint for the failed refresh. Source app remains at the tested LC12 baseline, and the new executable remains unverified.
+- Limited this session to small file edits, documentation/exclusion checks, and Git publication. No builds, model runs, dependency installation, or full test suite.
