@@ -22,6 +22,7 @@ One row is one bounded work session, usually one day's work when the user return
 | LC08R | Blocked | Refresh portable executable after LC10/LC12 | Build a new named folder, retain old output, verify frozen diagnostics and offline CPU/fallback captions, and record source/file hashes. | LC10, LC12 |
 | LC08D | Done | Identify checksum failures without a rebuild | Report failing artifact and OS error without local root paths; synthetic tests prove nonzero exit, no retry, and no manifest on failure. | LC08R failure evidence |
 | LC08P | Done | Read-only build prerequisite check | PowerShell -CheckOnly / Python --check-only shares build prerequisites, never stages/installs/builds, rejects installation flag, and passes synthetic plus local checks. | LC08D |
+| LC08H | Done | Portable project/Codex handoff | Publish clone/open instructions, pasteable context, read-only first-host assessment, and cross-PC Git workflow without copying credentials or private artifacts. | LC08P |
 
 LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
 WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage
@@ -52,6 +53,11 @@ resource plan before retrying. Passing the disk minimum alone is not clearance.
 Follow-up after user cleanup (2026-11-07): D: now has 4.19 GiB free and available
 RAM is 2.85 GiB. The disk minimum is met; LC08R remains paused pending the resource
 plan or separate host. No build or model run was started.
+
+University-PC option (2026-11-08): user has no second Windows PC at home and may
+be able to use a university PC. Prepared [new-PC handoff](NEW-PC.md); availability,
+permitted use, capacity, setup, and runtime checks are unverified. LC08R and LC09
+remain blocked until the candidate host is assessed.
 
 ## Session routine
 

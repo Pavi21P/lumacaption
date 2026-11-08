@@ -1,10 +1,10 @@
 # LumaCaption status
 
-Updated: 2026-11-07 (America/Chicago)
+Updated: 2026-11-08 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC08P - read-only build prerequisite command verified
-Next action: arrange a separate Windows build host or agree on a resource plan
+Current checkpoint: LC08H - portable Codex handoff prepared
+Next action: assess a permitted university PC using docs/NEW-PC.md; availability unconfirmed
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.

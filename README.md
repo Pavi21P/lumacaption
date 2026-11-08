@@ -157,6 +157,12 @@ The [evaluation protocol and CLI instructions](docs/EVALUATION.md) define a fixe
 
 BLIP can omit details, invent objects, or describe people incorrectly. Review captions before using them as accessibility text. Longer generation limits do not guarantee more accurate detail. This release generates English captions and defaults to CPU. It does not include custom model training or an installer executable. The optional CUDA path is experimental; real GPU validation is pending.
 
+## Continue on another PC
+
+Use the [new-PC handoff](docs/NEW-PC.md) to clone the project and give a fresh Codex
+chat the saved plan and progress. The old chat is not required; start with the
+read-only host assessment before setting up or building on another machine.
+
 ## Development record
 
 GitHub Actions is currently disabled at the user's request. Development checkpoints run appropriate local checks before publication; documentation-only checkpoints verify links and consistency.

@@ -218,3 +218,10 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - Added six synthetic check-only cases covering success at the disk minimum, insufficient disk, existing output/work folders, missing dependency, and invalid name. They prohibit build/staging/subprocess calls and confirm no new files.
 - Validation: 28 focused packaging tests; full sequential suite 310 passed in 23.94 seconds; Ruff lint/format passed for 26 files. Actual PowerShell check-only passed and created no build/output folders; the incompatible flag combination was rejected.
 - No build, model/inference, installation, cleanup, or system changes. No claim that passing prerequisites makes a heavy retry safe. LC08R/LC09/LC11 remain blocked; updated handoff and publication checks before push.
+
+## 2026-11-08 - LC08H: portable university-PC handoff
+
+- User may have access to a university PC but cannot see the old Codex chat there. Added docs/NEW-PC.md with clone/open steps, a pasteable new-chat prompt, the saved-context entry points, and a cross-PC Git workflow.
+- The prompt starts with a read-only host assessment and a resource plan. It does not authorize installations, downloads, builds, inference, system changes, or re-enabling Actions. University access/permitted use and machine capacity remain unconfirmed.
+- Explained that Git transfers tracked context/code, not local chat history, environments, models, private files, or build artifacts. Kept Git identity local to the checkout and credential files out of the transfer instructions.
+- Documentation-only validation: linked local paths, exact repository URL/identity, compact status, whitespace, and tracked/history exclusions. No application tests, model runs, or builds repeated; the prior 310-test baseline is unchanged. No university-PC test or setup is claimed.
