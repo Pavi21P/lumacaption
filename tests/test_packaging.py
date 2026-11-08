@@ -136,3 +136,72 @@ def test_only_generated_installation_urls_are_removed(builder, monkeypatch, tmp_
     assert not private.exists() and notice.read_text() == "Retain me"
     with pytest.raises(ValueError, match="inside"):
         builder.sanitize_metadata(tmp_path)
+
+
+def test_build_digest_matches_known_sha256(builder, tmp_path):
+    path = tmp_path / "tiny.txt"
+    path.write_bytes(b"abc")
+    assert builder.digest(path) == (
+        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    )
+
+
+@pytest.mark.parametrize("stage", ["open", "read"])
+def test_hash_failure_identifies_artifact_without_private_root(
+    builder, monkeypatch, tmp_path, stage
+):
+    monkeypatch.setattr(builder, "ROOT", tmp_path)
+    path = tmp_path / "dist" / "folder with spaces" / "broken.dll"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"tiny fixture")
+    failure = OSError(22, "Invalid argument", str(path))
+
+    def fail(*args, **kwargs):
+        raise failure
+
+    if stage == "open":
+        monkeypatch.setattr(Path, "open", fail)
+    else:
+        monkeypatch.setattr(builder.hashlib, "file_digest", fail)
+    with pytest.raises(ValueError) as caught:
+        builder.digest(path)
+    assert "dist/folder with spaces/broken.dll" in str(caught.value)
+    assert "OS error 22" in str(caught.value)
+    assert "unverified" in str(caught.value)
+    assert str(tmp_path) not in str(caught.value)
+    assert caught.value.__cause__ is failure
+
+
+def test_hash_failure_exits_without_manifest_or_retry(builder, monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(builder, "ROOT", tmp_path)
+    output = tmp_path / "dist" / "fixture"
+    bundle = output / "LumaCaption"
+    bundle.mkdir(parents=True)
+    stage = tmp_path / "stage"
+    (stage / "licenses").mkdir(parents=True)
+    for name in ("LumaCaption.exe", "LumaCaption-CLI.exe"):
+        (bundle / name).write_bytes(b"fixture, not an executable")
+    (tmp_path / "packaging").mkdir()
+    for name in ("LICENSE", "THIRD_PARTY_NOTICES.md", "packaging/README-Windows.md"):
+        (tmp_path / name).write_text("fixture")
+    failed = bundle / "LumaCaption.exe"
+    original_digest = builder.hashlib.file_digest
+    attempts = []
+
+    def read(handle, algorithm):
+        if Path(handle.name) == failed:
+            attempts.append(handle.name)
+            raise OSError(22, "Invalid argument", handle.name)
+        return original_digest(handle, algorithm)
+
+    monkeypatch.setattr(builder.hashlib, "file_digest", read)
+    monkeypatch.setattr(builder, "build", lambda name: builder.finish_bundle(output, stage, {}, {}))
+    monkeypatch.setattr(sys, "argv", ["build_windows.py", "--name", "fixture"])
+    assert builder.main() == 1
+    error = capsys.readouterr().err
+    assert "dist/fixture/LumaCaption/LumaCaption.exe" in error
+    assert "OS error 22" in error and "unverified" in error
+    assert str(tmp_path) not in error
+    assert len(attempts) == 1
+    assert not (bundle / "build-info.json").exists()
+    assert failed.read_bytes() == b"fixture, not an executable"

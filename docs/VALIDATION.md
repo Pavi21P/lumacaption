@@ -359,3 +359,23 @@ passing disk check nor this review authorizes an automatic retry. Preserve the
 failed output until a retention/cleanup decision is made. LC09 and LC11 remain
 blocked independently. Documentation links and whitespace were checked; the
 existing LC12 test baseline is unchanged. GitHub Actions remains disabled.
+
+## LC08D checksum error diagnostics (2026-11-07)
+
+The build helper now converts file-open/read OSError failures into an actionable
+error containing the project-relative artifact path and OS error number. Paths
+outside the project use the basename. The normal handled CLI message does not
+print the private absolute root; a local traceback can still expose the chained
+original exception. Successful SHA-256 behavior is unchanged.
+
+Four new synthetic cases cover a known SHA-256 vector, open failure, read failure,
+and finalization failure through main. They verify the artifact path, OS error 22,
+original exception chaining, exit code 1, no retry, no manifest on failure, and
+preserved fixture bytes. No PyInstaller or generated executable was run.
+
+Focused packaging tests: 22 passed. Full sequential pytest: 304 passed in 24.55s.
+Ruff lint and format checks passed (26 files) with --no-cache after the sandbox
+could not write the existing cache. No real model was loaded and no inference or
+packaging was repeated. Application code/dependencies are unchanged; LC12 remains
+the real-caption baseline. The old failing artifact and crash cause remain unknown.
+LC08R is still blocked pending a suitable execution environment/resource plan.

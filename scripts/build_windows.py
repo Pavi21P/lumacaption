@@ -21,8 +21,15 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def digest(path: Path) -> str:
-    with path.open("rb") as handle:
-        return hashlib.file_digest(handle, "sha256").hexdigest()
+    try:
+        with path.open("rb") as handle:
+            return hashlib.file_digest(handle, "sha256").hexdigest()
+    except OSError as exc:
+        # Keep the failing artifact identifiable without publishing local root paths.
+        display = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.name
+        raise ValueError(
+            f"Cannot hash {display!r} (OS error {exc.errno}). Build remains unverified."
+        ) from exc
 
 
 def pins(path: Path) -> dict[str, str]:

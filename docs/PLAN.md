@@ -20,6 +20,7 @@ One row is one bounded work session, usually one day's work when the user return
 | LC11 | Blocked | Manual accessibility acceptance | Use Windows assistive technology with a user/tester to review announcements, focus, progress, and errors; record evidence and fix observed issues. If unavailable, mark blocked. | LC10 + manual testing |
 | LC12 | Done | Optional GPU inference | Add explicit device selection with CPU fallback and tests; measure real speed/memory only on available supported hardware. Do not replace the working CPU setup merely to attempt a benchmark. | LC05 + hardware decision |
 | LC08R | Blocked | Refresh portable executable after LC10/LC12 | Build a new named folder, retain old output, verify frozen diagnostics and offline CPU/fallback captions, and record source/file hashes. | LC10, LC12 |
+| LC08D | Done | Identify checksum failures without a rebuild | Report failing artifact and OS error without local root paths; synthetic tests prove nonzero exit, no retry, and no manifest on failure. | LC08R failure evidence |
 
 LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
 WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage

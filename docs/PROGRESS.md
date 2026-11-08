@@ -202,3 +202,11 @@ Entries describe work actually performed on the date shown (America/Chicago). Co
 - User reported freeing space. A single successful Windows CIM counter read confirmed D: at 4.19 GiB free (previously 2.61 GiB), C: at 7.26 GiB free, and available physical RAM at 2.85 GiB. Discarded unavailable sandbox drive counters.
 - The build's 3 GiB disk minimum is now met. Kept packaging paused: disk headroom alone does not establish safe build capacity or explain the prior crash.
 - Updated plan/status and checked whitespace and compact handoff length. No app, model, build, tests, cleanup, or system-setting changes were performed.
+
+## 2026-11-07 - LC08D: actionable checksum failure diagnostics
+
+- Improved the build checksum helper to name the failing artifact relative to the project and report its OS error code. The handled CLI error omits the private absolute root; the original exception remains chained for local debugging.
+- Added four synthetic regression cases: known SHA-256 output, file-open/read failures, and finalization failure through the command entry point. Verified exit 1, one attempt, retained fixture data, and no manifest after failure.
+- Validation: 22 focused packaging tests passed, then 304 tests passed sequentially in 24.55 seconds; Ruff lint and formatting passed for 26 files. Used --no-cache after sandbox access denied the existing Ruff cache.
+- No executable build, real artifact hash scan, model load, inference, downloads, or system changes. Tests use tiny files and fake captioners. The existing failed bundle was untouched.
+- LC08R remains paused: this makes a future failure diagnosable; it neither identifies the old failing file nor fixes/explains the blue screen. LC09/LC11 remain blocked. Updated plan/status and checked publication exclusions before the authorized checkpoint push.

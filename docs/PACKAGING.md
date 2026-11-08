@@ -29,6 +29,15 @@ safe memory/disk capacity for a full build. See the [resource review](VALIDATION
 Keep retries paused pending a separate host or an agreed resource plan; this review
 did not run or validate any generated executable.
 
+## Checksum failure reporting
+
+The source build helper now reports the failing artifact's project-relative path
+and OS error code if it cannot open or read a file for hashing. It exits with a
+failure and does not write a completed manifest or automatically retry. Preserve
+the error and output for investigation. This diagnostic improvement was tested
+with tiny synthetic files; the failed LC08R folder has not been rehashed or validated.
+See [test evidence](VALIDATION.md#lc08d-checksum-error-diagnostics-2026-11-07).
+
 ## Build prerequisites and command
 
 Use Windows x64, CPython 3.11.9, and the existing source environment created by
