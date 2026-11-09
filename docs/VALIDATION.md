@@ -405,3 +405,52 @@ These results are prerequisite/dispatch evidence, not a RAM assessment, reserved
 disk capacity, dependency-import check, packaged-runtime pass, or crash diagnosis.
 The failed LC08R bundle remains untouched and unverified. Application code and
 dependencies are unchanged. No model inference or heavy artifact scan was run.
+
+## LC08U university setup (2026-11-09)
+
+The user approved the proposed university-PC setup after the read-only assessment.
+No university policy document was independently reviewed. The initially empty
+workspace was populated from public main at `9741365`; application source and
+dependency locks were unchanged during this setup.
+
+| Observation | Actual result |
+| --- | --- |
+| OS | Windows 11 Enterprise, 10.0.26200, x64 |
+| Installed RAM | 15.69 GiB |
+| Initial available RAM / C: free | 3.58 GiB / 75.50 GiB |
+| Latest after user cleanup | 5.17 GiB available RAM / 73.21 GiB free C: |
+| Initial tool discovery | No Git on PATH or two common install paths; python was a Store alias; py invoked Spyder's conda-forge Python 3.11.9 x64 |
+| Git setup | MinGit 2.56.0.windows.4 archive SHA-256 matched official release metadata; isolated under .local/tools/git |
+| Python setup | Official 3.11.9 x64 installer signature valid, signer Python Software Foundation; installed under .local/tools/python311 with Tcl/Tk |
+| Environment | Fresh .venv, requirements-lock.txt and requirements-build.txt installed; pip check passed |
+| Build prerequisite check | PowerShell -CheckOnly passed for LumaCaption-0.1.0-win64-university-20261109; no executable build started |
+| Source CLI --help | Exit 0, usage printed |
+| Source tests | 310 passed in 15.66 seconds, synthetic captioners; monitored available RAM samples 4.16 and 3.47 GiB |
+| Ruff | Lint passed; format check passed, 42 files already formatted |
+| Source CLI --diagnose | Exit 1; Python/Tk/Pillow/torch/transformers/truststore passed; absent model cache failed |
+| Private test images | Three supplied photos moved to .local/Test Images; git check-ignore confirmed all three |
+
+The first setup monitor did not capture a child exit code. Its outer exit 0 was
+not accepted as setup evidence: the completion log, separate pip check, exact
+dependency prerequisite check, and actual tests established the results above.
+The private helper was corrected before later monitored commands, which reported
+explicit exit codes. Setup resource samples ranged from 3.63 to 5.19 GiB available
+RAM. Samples are intermittent observations, not a measurement of peak consumption.
+
+The proposed heavy-task resource plan requires at least 8 GiB available RAM to
+start and stops below 2 GiB available RAM or 15 GiB free disk, with one heavy task
+at a time and two inference-library threads. These are conservative session limits,
+not measured package requirements or proof against a crash. No heavy task was
+started to test these limits. At 5.17 GiB available RAM, the user explicitly chose
+to save the setup checkpoint and leave the build pending.
+
+No model download/load/inference, PyInstaller build, generated executable launch,
+real image caption, offline restart, or runtime path-with-spaces check occurred.
+The spaced folder is prepared only. Synthetic source tests cover keyboard and
+persistence behavior; they do not establish packaged behavior or a person's native
+dialog/keyboard walkthrough. Manual caption edits, CSV/JSON exports, save/reopen,
+and cancelling an unsaved-changes prompt with edits preserved remain unperformed
+here. Screen-reader testing stays deferred. This host now contains development
+tools; it does not by itself satisfy LC09 clean-machine distribution testing.
+GitHub Actions was not enabled. Raw reports, photos, tools, caches, and environments
+remain ignored; only documentation is included in this checkpoint.

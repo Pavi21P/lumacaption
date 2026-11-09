@@ -23,6 +23,7 @@ One row is one bounded work session, usually one day's work when the user return
 | LC08D | Done | Identify checksum failures without a rebuild | Report failing artifact and OS error without local root paths; synthetic tests prove nonzero exit, no retry, and no manifest on failure. | LC08R failure evidence |
 | LC08P | Done | Read-only build prerequisite check | PowerShell -CheckOnly / Python --check-only shares build prerequisites, never stages/installs/builds, rejects installation flag, and passes synthetic plus local checks. | LC08D |
 | LC08H | Done | Portable project/Codex handoff | Publish clone/open instructions, pasteable context, read-only first-host assessment, and cross-PC Git workflow without copying credentials or private artifacts. | LC08P |
+| LC08U | Done | University host assessment and isolated setup | Confirm permitted use with user, record resources, create isolated pinned environment, run source/prerequisite checks, and explicitly record remaining build/runtime blockers. | LC08H |
 
 LC09 blocker (2026-11-06): this development host is Windows 10 Home, build 19045.
 WindowsSandbox.exe, Hyper-V Get-VM/vmms, VMware vmrun, and VirtualBox VBoxManage
@@ -58,6 +59,22 @@ University-PC option (2026-11-08): user has no second Windows PC at home and may
 be able to use a university PC. Prepared [new-PC handoff](NEW-PC.md); availability,
 permitted use, capacity, setup, and runtime checks are unverified. LC08R and LC09
 remain blocked until the candidate host is assessed.
+
+University setup (2026-11-09, LC08U): user confirmed permitted setup. Windows 11
+Enterprise x64 build 26200 has 15.69 GiB RAM; latest available RAM after user cleanup
+was 5.17 GiB, with 73.21 GiB free on C:. Installed workspace-local portable Git and
+official Python 3.11.9 x64, then the isolated locked runtime/build environment.
+Build -CheckOnly, pip check, 310 synthetic source tests, and Ruff passed. Source
+CLI --help passed; --diagnose exited 1 only for the intentionally absent model cache.
+Proposed heavy-work guard: start at >=8 GiB available RAM; stop below 2 GiB RAM or
+15 GiB free disk, running one task at a time. This is not a measured capacity guarantee.
+The user chose to save the setup checkpoint and leave the build pending. LC08R
+remains blocked on resource headroom or an explicitly revised resource plan; do not
+automatically retry. LC09 is not satisfied by source tests on this development host.
+Packaged launch/caption/offline/spaced-path checks and manual keyboard/edit/export/
+session/cancel checks are unperformed here. Screen-reader testing remains deferred.
+See [actual evidence](VALIDATION.md#lc08u-university-setup-2026-11-09) and
+[resume paths](NEW-PC.md#university-workspace-checkpoint-2026-11-09).
 
 ## Session routine
 

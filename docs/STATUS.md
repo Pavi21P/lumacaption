@@ -1,10 +1,10 @@
 # LumaCaption status
 
-Updated: 2026-11-08 (America/Chicago)
+Updated: 2026-11-09 (America/Chicago)
 Repository: https://github.com/Pavi21P/lumacaption
 Branch: main
-Current checkpoint: LC08H - portable Codex handoff prepared
-Next action: assess a permitted university PC using docs/NEW-PC.md; availability unconfirmed
+Current checkpoint: LC08U - university setup verified; build pending by user choice
+Next action: recheck RAM before build/model work; reuse installed setup (docs/NEW-PC.md).
 Task source: docs/PLAN.md
 Session rule: one ready task per "continue", verify, commit/push, stop.
 Scheduling: user-triggered; no unattended daily job.
@@ -13,26 +13,25 @@ GitHub Actions: disabled at user request; do not re-enable unasked.
 
 ## Verified baseline
 
-- LC12 source: 03bda3f; 300 tests and Ruff passed before the packaging attempt.
-- CPU/CUDA selection, CPU fallback, keyboard controls, sessions, and recovery exist.
-- LC12 real offline CPU/fallback captions matched prior output; zero network attempts.
-- LC08D identifies checksum failures; LC08P adds read-only -CheckOnly.
-- 310 synthetic tests and Ruff passed; local check-only command passed.
-- Application code/dependencies unchanged; no build/model work performed.
-- Original verified LC08 executable remains older than LC10/LC12.
-- Reuse .venv and .cache/models; private data/reports/builds stay ignored.
+- University Windows 11 Enterprise x64, build 26200; 15.69 GiB installed RAM.
+- User confirmed permitted setup; Git 2.56.0.windows.4 and official Python 3.11.9 x64 installed.
+- Fresh .venv has locked runtime/build packages; pip check and build -CheckOnly passed.
+- 310 source tests passed in 15.66s; Ruff lint/format passed (42 files).
+- Source CLI --help passed. --diagnose passed Python/Tk/imports, exited 1 for absent model cache.
+- Source/locks unchanged from 9741365; no model download, inference, or executable build.
+- Three user photos are ignored under .local/Test Images; local logs/tools are also ignored.
+- Reuse this .venv and .local/tools; see docs/NEW-PC.md for exact launch paths.
 
 ## Remaining conditions
 
-LC08R compilation/collection completed; checksum finalization failed with OSError
-[Errno 22] Invalid argument in hashlib.file_digest. No runtime pass or sealed manifest.
-Unverified output: dist/LumaCaption-0.1.0-win64-lc12/LumaCaption/; do not distribute.
-Last resource snapshot after user cleanup: 4.19 GiB free build-drive space, above the 3 GiB disk minimum;
-2.85 GiB RAM available. Snapshots do not establish safe build capacity.
-A recent Kernel-Power event records BugcheckCode 59; exact crash cause is unknown.
-See docs/VALIDATION.md for evidence. Check-only does not establish safe build capacity.
-No automatic packaging retry: use a separate host or agree on a resource plan first.
-LC09 still needs a clean Windows host/VM.
-LC11 screen-reader testing was deferred; final manual persistence checks were not tried.
-Positive visual/captioning feedback is not accessibility acceptance.
-Real GPU execution/performance remain unverified.
+After user cleanup: 5.17 GiB available RAM, 73.21 GiB free C: space.
+Proposed heavy-work limits: start at >=8 GiB available RAM; stop below 2 GiB RAM or 15 GiB disk.
+These are conservative session limits, not measured requirements or a safety guarantee.
+User chose to save setup and leave build pending. Work sequentially; leave other apps alone.
+Home LC08R failed checksum finalization (OSError 22); its bundle remains unverified.
+The reported home-PC crash cause remains unknown; see docs/VALIDATION.md.
+Packaged desktop/CLI, real captions, offline restart, and spaced-path runtime checks are unperformed here.
+Manual keyboard/edit/CSV/JSON/session/cancel-preserves-edits checks remain pending.
+Source synthetic tests do not establish packaged behavior or manual acceptance.
+LC09 clean-host verification, LC11 screen-reader acceptance, and real GPU testing remain unverified.
+Screen-reader testing stays deferred. Original verified LC08 executable predates LC10/LC12.
